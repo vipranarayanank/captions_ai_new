@@ -14,17 +14,17 @@ AI-assisted video caption editor built with React + TypeScript + Vite, NestJS, P
 1. Run `npm install` at the repository root.
 2. Copy `apps/api/.env.example` to `apps/api/.env`.
 3. Set `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `OPENAI_API_KEY`.
-4. Create a **private** Supabase Storage bucket named `captions-media` (or set `SUPABASE_STORAGE_BUCKET` to your bucket name).
-5. In Supabase Storage, create a **private** `captions-media` bucket and set its maximum file size to at least the `MAX_UPLOAD_MB` value (500 MB by default). The project also needs to allow uploads of that size in its Storage settings.\n6. Start Redis with `docker compose up -d redis`.
-7. Generate Prisma Client and sync the schema: `npm run db:generate`, then `npm run db:push`.
-8. Start the app with `npm run dev`.
+4. In Supabase Storage, create a **private** bucket named `captions-media` (or set `SUPABASE_STORAGE_BUCKET` to your bucket name). Set the bucket/project upload limit to at least `MAX_UPLOAD_MB` (500 MB by default).
+5. Start Redis with `docker compose up -d redis`.
+6. Generate Prisma Client and sync the schema: `npm run db:generate`, then `npm run db:push`.
+7. Start the app with `npm run dev`.
 
 Frontend: http://localhost:5173  
 API: http://localhost:3000/api  
 Health check: http://localhost:3000/api/health
 
 ## Video storage
-Original videos and extracted audio are stored in the private Supabase Storage bucket. The backend uses a server-only service key; never put it in a `VITE_*` variable or commit it. The API validates media keys before streaming objects. Project metadata and caption data live in Supabase PostgreSQL. Temporary files are only used while processing.
+Original videos, extracted audio, and exported MP4s are stored in the private Supabase Storage bucket. The backend uses a server-only key; never put it in a `VITE_*` variable or commit it. Project metadata and caption data live in Supabase PostgreSQL. Temporary files are only used while processing.
 
 ## Scripts
 - `npm run dev` — frontend and API
@@ -33,8 +33,14 @@ Original videos and extracted audio are stored in the private Supabase Storage b
 - `npm run db:generate` — generate Prisma Client
 - `npm run db:push` — sync Prisma schema to the configured database
 - `npm run build` — generate Prisma Client and build frontend and API
-- `npm run test` — API unit tests\n- `npm run lint` — lint TypeScript files\n- `npm run format` — format supported source and documentation files
+- `npm run test` — API unit tests
+- `npm run lint` — lint TypeScript files
+- `npm run format` — format supported source and documentation files
 
-## Processing and export\n- The API process runs the BullMQ transcription and export workers locally. Keep Redis running while the API is running.\n- Export bundles the Remotion composition once and renders MP4 files in the background. Rendering requires sufficient memory/CPU and a working headless Chromium environment.\n\n## Important MVP limitations
+## Processing and export
+- The API process runs the BullMQ transcription and export workers locally. Keep Redis running while the API is running.
+- Export bundles the Remotion composition once and renders MP4 files in the background. Rendering requires sufficient memory/CPU and a working headless Chromium environment.
+
+## Important MVP limitations
 - Authentication and project ownership are not implemented. Do not expose this deployment publicly until access control is added.
 - Export and processing require FFmpeg/ffprobe, Redis, Supabase Storage credentials, and an OpenAI API key.
