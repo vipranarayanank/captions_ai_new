@@ -118,12 +118,13 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
           <select id="spoken-language" className="language-select" value={spokenLanguage} onChange={(e) => setSpokenLanguage(e.target.value)}>
             {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
           </select>
-          {spokenLanguage !== 'en' && <><label className="language-label" htmlFor="caption-style">Aa <span>Caption Style</span></label>
+          {spokenLanguage !== 'en' && <><label className="language-label" htmlFor="caption-style">Aa <span>Caption Language</span></label>
           <select id="caption-style" className="language-select" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value)}>
-            <option value="native">{spokenLanguage === 'ta' ? 'Tamil (சாப்பிட்டாச்சா?)' : spokenLanguage === 'hi' ? 'Hindi (खाना खाया?)' : 'Native script'}</option>
-            {(spokenLanguage === 'ta' || spokenLanguage === 'hi') && <option value="roman">{spokenLanguage === 'ta' ? 'Tanglish (Saptacha)' : 'Hinglish (Khana khaya)'}</option>}
+            <option value="native">Native language ({LANGUAGES.find(([code]) => code === spokenLanguage)?.[1] ?? 'Native script'})</option>
+            <option value="roman">Romanized {LANGUAGES.find(([code]) => code === spokenLanguage)?.[1] ?? 'captions'} (English letters)</option>
+            <option value="english">English translation</option>
           </select></>}
-          <p className="language-hint">{spokenLanguage === 'en' ? 'English audio automatically produces English captions.' : spokenLanguage === 'ta' ? 'Choose Tamil script or Tanglish written in English letters.' : spokenLanguage === 'hi' ? 'Choose Hindi script or Hinglish written in English letters.' : 'Captions will use the selected spoken language.'}</p>
+          <p className="language-hint">{spokenLanguage === 'en' ? 'English audio automatically produces English captions.' : captionStyle === 'native' ? 'Captions stay in the original language and writing system.' : captionStyle === 'roman' ? 'Captions keep the original language but use English letters.' : 'Captions are translated into English.'}</p>
         </div>
         <button type="button" className="primary-button upload-submit" disabled={uploading} onClick={() => void handleUpload()}>
           {uploading ? 'Uploading video…' : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
