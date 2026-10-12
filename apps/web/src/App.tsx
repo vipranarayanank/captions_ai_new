@@ -1,4 +1,4 @@
-import { ChangeEvent, DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, DragEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Player, PlayerRef } from '@remotion/player';
 import { CaptionComposition } from './components/CaptionComposition';
 import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption, startExport, getExportStatus } from './lib/api';
@@ -213,7 +213,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     try { const updated = await patchProject(id, { title: title.trim() }); setProject({ ...updated, captions }); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not rename project.'); }
   };
-  const beginTimelineDrag = (event: React.PointerEvent<HTMLButtonElement>, caption: Caption) => {
+  const beginTimelineDrag = (event: ReactPointerEvent<HTMLButtonElement>, caption: Caption) => {
     event.stopPropagation();
     const track = event.currentTarget.parentElement as HTMLElement;
     const blockRect = event.currentTarget.getBoundingClientRect();
@@ -228,7 +228,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     selectCaption(caption.id);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
-  const moveTimelineDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+  const moveTimelineDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current;
     if (!drag || !drag.width) return;
     const delta = (event.clientX - drag.startX) / drag.width * durationMs;
@@ -305,7 +305,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
       </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">9:16 · VERTICAL</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={1080} compositionHeight={1920} controls clickToPlay style={{ width: 'min(100%, 340px)', maxHeight: 'min(64vh, 640px)', aspectRatio: '9 / 16', backgroundColor: '#090a10', borderRadius: 12, overflow: 'hidden' }} onFrameUpdate={(frame) => setCurrentMs(frame / 30 * 1000)} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={1080} compositionHeight={1920} controls clickToPlay style={{ width: 'min(100%, 340px)', maxHeight: 'min(64vh, 640px)', aspectRatio: '9 / 16', backgroundColor: '#090a10', borderRadius: 12, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
         <div className="template-picker"><div className="template-heading"><span>CAPTION STYLE</span><span>5 presets</span></div><div className="template-grid">{[
           ['classic', 'Classic', 'Aa'], ['karaoke', 'Karaoke', 'Aa'], ['pop', 'Pop', 'POP'], ['boxed', 'Boxed', 'Aa'], ['neon', 'Neon', 'Aa'],
         ].map(([key, label, sample]) => <button key={key} className={`template-card ${project.templateId === key ? 'active' : ''} template-${key}`} onClick={() => void changeTemplate(key)}><span>{sample}</span><small>{label}</small></button>)}</div></div>
