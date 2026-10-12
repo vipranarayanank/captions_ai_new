@@ -38,6 +38,8 @@ export interface Project {
   templateId: string;
   backgroundColor?: string;
   backgroundOnly?: boolean;
+  backgroundColor?: string;
+  backgroundOnly?: boolean;
   captions: Caption[];
   createdAt: string;
   updatedAt: string;
