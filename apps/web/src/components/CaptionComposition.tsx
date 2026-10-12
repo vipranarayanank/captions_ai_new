@@ -9,6 +9,7 @@ export interface CaptionCompositionProps {
   captions: Caption[];
   templateId: string;
   transitionName?: CaptionAnimation;
+  captionPosition?: 'top' | 'middle' | 'bottom';
 }
 
 const clamp = { extrapolateLeft: 'clamp' as const, extrapolateRight: 'clamp' as const };
@@ -112,7 +113,7 @@ function renderWords(
   });
 }
 
-export function CaptionComposition({ src, captions, templateId, transitionName }: CaptionCompositionProps) {
+export function CaptionComposition({ src, captions, templateId, transitionName, captionPosition = 'middle' }: CaptionCompositionProps) {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const timeMs = frame / fps * 1000;
@@ -126,8 +127,8 @@ export function CaptionComposition({ src, captions, templateId, transitionName }
     : ['triple','smooth-fusion'].includes(preset.id) ? 'three-line'
     : preset.structure;
   const fontSize = Math.max(12, Math.min(width, height) * preset.sizeRel);
-  const top = preset.position === 'top' ? '8%' : preset.position === 'middle' ? '42%' : 'auto';
-  const bottom = preset.position === 'bottom' ? '12%' : 'auto';
+  const top = captionPosition === 'top' ? '8%' : captionPosition === 'middle' ? '42%' : 'auto';
+  const bottom = captionPosition === 'bottom' ? '12%' : 'auto';
   const activeDuration = active ? active.endMs - active.startMs : 0;
 
   return (
