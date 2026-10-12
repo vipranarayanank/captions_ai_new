@@ -171,17 +171,6 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [behindPerson, setBehindPerson] = useState(false);
   const [timelineZoom, setTimelineZoom] = useState(5);
   const [previewDimensions, setPreviewDimensions] = useState({ width: 1080, height: 1920 });
-  useEffect(() => {
-    if (!videoSrc) return;
-    const video = document.createElement('video');
-    video.preload = 'metadata';
-    video.src = videoSrc;
-    video.onloadedmetadata = () => {
-      if (video.videoWidth > 0 && video.videoHeight > 0) setPreviewDimensions({ width: video.videoWidth, height: video.videoHeight });
-    };
-    return () => { video.onloadedmetadata = null; video.src = ''; };
-  }, [videoSrc]);
-
   const playerRef = useRef<PlayerRef>(null);
   const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
   const lastProjectId = useRef('');
@@ -285,6 +274,17 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const durationMs = Math.max(1000, (project?.durationSec ?? 30) * 1000);
   const selected = captions.find((caption) => caption.id === selectedId);
   const videoSrc = useMemo(() => apiUrl(`/projects/${id}/media`), [id]);
+
+  useEffect(() => {
+    if (!videoSrc) return;
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.src = videoSrc;
+    video.onloadedmetadata = () => {
+      if (video.videoWidth > 0 && video.videoHeight > 0) setPreviewDimensions({ width: video.videoWidth, height: video.videoHeight });
+    };
+    return () => { video.onloadedmetadata = null; video.src = ''; };
+  }, [videoSrc]);
   const seek = (ms: number) => { setCurrentMs(ms); playerRef.current?.seekTo(Math.floor(ms / 1000 * 30)); };
   const changeTemplate = async (templateId: string) => {
     if (!project) return;
