@@ -568,3 +568,29 @@ html, body, #root { min-height: 0; }
 }
 .caption-panel .template-position-button:hover{background:#595965;color:#fff}
 .caption-panel .template-position-button.selected{background:#8b35f5;color:#fff}
+
+
+/* Animated sample captions inside template-picker cards */
+.template-card .template-thumb{display:flex;align-items:center;justify-content:center;overflow:hidden;padding:2px 3px;line-height:1.05;white-space:normal}
+.template-sample-animation{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%;max-width:100%;font-size:inherit;line-height:1.05;text-align:center;overflow-wrap:anywhere}
+.template-sample-animation>span,.template-sample-animation>i{display:block;max-width:100%;font-size:inherit;font-style:inherit;line-height:inherit}
+.template-sample-animation>i{font-size:.78em;font-weight:900}
+.template-card.previewing .template-thumb{isolation:isolate}
+.template-sample-animation.preview-none{animation:templatePreviewFade 700ms ease-out both}
+.template-sample-animation.preview-fade{animation:templatePreviewFade 850ms ease-out both}
+.template-sample-animation.preview-slideUp{animation:templatePreviewSlideUp 850ms cubic-bezier(.2,.8,.2,1) both}
+.template-sample-animation.preview-slideDown{animation:templatePreviewSlideDown 850ms cubic-bezier(.2,.8,.2,1) both}
+.template-sample-animation.preview-pop{animation:templatePreviewPop 850ms cubic-bezier(.16,1.2,.3,1) both}
+.template-sample-animation.preview-blurIn{animation:templatePreviewBlur 850ms ease-out both}
+.template-sample-animation.preview-typewriter{animation:templatePreviewType 850ms steps(18,end) both}
+.template-sample-animation.preview-bounce{animation:templatePreviewBounce 900ms cubic-bezier(.22,.8,.3,1) both}
+.template-sample-animation.preview-shake{animation:templatePreviewShake 850ms ease-out both}
+@keyframes templatePreviewFade{0%{opacity:0}100%{opacity:1}}
+@keyframes templatePreviewSlideUp{0%{opacity:0;transform:translateY(13px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes templatePreviewSlideDown{0%{opacity:0;transform:translateY(-13px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes templatePreviewPop{0%{opacity:0;transform:scale(.45)}70%{opacity:1;transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes templatePreviewBlur{0%{opacity:0;filter:blur(8px);transform:scale(1.08)}100%{opacity:1;filter:blur(0);transform:scale(1)}}
+@keyframes templatePreviewType{0%{clip-path:inset(0 100% 0 0);opacity:1}100%{clip-path:inset(0 0 0 0);opacity:1}}
+@keyframes templatePreviewBounce{0%{opacity:0;transform:translateY(18px) scale(.92)}65%{opacity:1;transform:translateY(-5px) scale(1.02)}82%{transform:translateY(2px) scale(.99)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes templatePreviewShake{0%{opacity:0;transform:translateX(-8px)}25%{opacity:1;transform:translateX(6px)}45%{transform:translateX(-4px)}65%{transform:translateX(2px)}100%{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.template-sample-animation[class*="preview-"]{animation:none!important}}
