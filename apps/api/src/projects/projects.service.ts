@@ -22,7 +22,7 @@ export class ProjectsService {
     private readonly config: ConfigService,
   ) {}
 
-  async upload(file: Express.Multer.File, languages: { sourceLanguage?: string; captionLanguage?: string } = {}) {
+  async upload(file: Express.Multer.File, languages: { sourceLanguage?: string } = {}) {
     if (!file) throw new BadRequestException('Choose a video file.');
     const ext = extname(file.originalname).toLowerCase();
     const maxBytes = Number(this.config.get('MAX_UPLOAD_MB') ?? 500) * 1024 * 1024;
@@ -46,7 +46,6 @@ export class ProjectsService {
           fileSizeBytes: file.size,
           status: 'UPLOADED',
           sourceLanguage: this.normalizeLanguage(languages.sourceLanguage),
-          captionLanguage: this.normalizeLanguage(languages.captionLanguage),
         },
       });
       await this.queue.enqueue(project.id);
