@@ -602,3 +602,5 @@ html, body, #root { min-height: 0; }
 
 /* Individual word lane connected to caption selection */
 .timeline-word-track{height:32px;position:relative;margin:0 10px 5px 68px;overflow:hidden;border:1px solid #393342;border-radius:5px;background:#15121b}.timeline-word-label{position:absolute;left:-58px;top:0;height:100%;display:flex;align-items:center;color:#c3acd9;font-size:10px}.timeline-word-block{position:absolute;top:3px;bottom:3px;min-width:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px;border:1px solid #51445f;border-radius:3px;background:#292131;color:#e8def5;font-size:8px;cursor:pointer}.timeline-word-block.active{border-color:#c084fc;background:#6b21a8;color:white}@media(min-width:761px){.timeline-word-track{height:28px;min-height:28px;flex:0 0 28px}}@media(max-width:760px){.timeline-word-track{min-width:500px;height:30px;flex:0 0 30px}}
+
+.transition-duration{display:flex;flex-direction:column;gap:7px;margin:10px 0 14px;color:#aaa2b9;font-size:11px}.transition-duration strong{color:#f5efff;font-size:12px}.transition-duration input{width:100%;accent-color:#a855f7}
