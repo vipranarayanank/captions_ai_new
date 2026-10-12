@@ -48,6 +48,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [spokenLanguage, setSpokenLanguage] = useState('en');
+  const [captionStyle, setCaptionStyle] = useState('native');
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -82,7 +83,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
     if (!selectedFile) { fileRef.current?.click(); return; }
     setUploading(true); setError('');
     try {
-      const project = await uploadProject(selectedFile, spokenLanguage);
+      const project = await uploadProject(selectedFile, spokenLanguage, captionStyle);
       await refresh();
       onOpen(project.id);
     } catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.'); }
@@ -117,7 +118,12 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
           <select id="spoken-language" className="language-select" value={spokenLanguage} onChange={(e) => setSpokenLanguage(e.target.value)}>
             {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
           </select>
-          <p className="language-hint">Captions will be generated in the selected spoken language.</p>
+          {spokenLanguage !== 'en' && <><label className="language-label" htmlFor="caption-style">Aa <span>Caption Style</span></label>
+          <select id="caption-style" className="language-select" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value)}>
+            <option value="native">{spokenLanguage === 'ta' ? 'Tamil (சாப்பிட்டாச்சா?)' : spokenLanguage === 'hi' ? 'Hindi (खाना खाया?)' : 'Native script'}</option>
+            {(spokenLanguage === 'ta' || spokenLanguage === 'hi') && <option value="roman">{spokenLanguage === 'ta' ? 'Tanglish (Saptacha)' : 'Hinglish (Khana khaya)'}</option>}
+          </select></>}
+          <p className="language-hint">{spokenLanguage === 'en' ? 'English audio automatically produces English captions.' : spokenLanguage === 'ta' ? 'Choose Tamil script or Tanglish written in English letters.' : spokenLanguage === 'hi' ? 'Choose Hindi script or Hinglish written in English letters.' : 'Captions will use the selected spoken language.'}</p>
         </div>
         <button type="button" className="primary-button upload-submit" disabled={uploading} onClick={() => void handleUpload()}>
           {uploading ? 'Uploading video…' : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
