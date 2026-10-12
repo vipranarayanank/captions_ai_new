@@ -19,6 +19,7 @@ export interface Caption {
   scale?: number;
   animationIn?: import('../templates').CaptionAnimation;
   animationOut?: import('../templates').CaptionAnimation;
+  animationDurationMs?: number;
 }
 export type ProjectStatus = 'UPLOADED' | 'EXTRACTING_AUDIO' | 'TRANSCRIBING' | 'READY' | 'FAILED';
 export interface Project {
