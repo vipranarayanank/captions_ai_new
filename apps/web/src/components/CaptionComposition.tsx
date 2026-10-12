@@ -57,6 +57,31 @@ function renderWords(
     Math.max(0, Math.floor(((timeMs - startMs) / Math.max(1, endMs - startMs)) * words.length)),
   );
 
+  if (structure === 'master') {
+    const split = Math.max(1, Math.ceil(words.length / 2));
+    return <span style={{display:'inline-flex',flexDirection:'column',alignItems:'center',lineHeight:.92,textShadow:'0 3px 2px rgba(0,0,0,.8)'}}>
+      <span style={{fontSize:'.62em',fontWeight:700,color:'#E7E7E7'}}>{words.slice(0,split).join(' ')}</span>
+      <span style={{fontSize:'1.45em',fontWeight:900,background:'linear-gradient(180deg,#fff8d9,#c8c8c8)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{words.slice(split).join(' ') || words[0]}</span>
+    </span>;
+  }
+  if (structure === 'highlight') {
+    return <span style={{display:'inline-block',padding:'.16em .34em',borderRadius:'.22em',background:preset.background ?? 'rgba(0,0,0,.72)',lineHeight:1.02}}>
+      {words.map((word,index)=><span key={index} style={{display:'inline-block',marginRight:index===words.length-1?0:'.22em',color:index===activeIndex?(preset.activeWord??'#00D9FF'):preset.color,fontWeight:index===activeIndex?900:preset.weight,textShadow:'none'}}>{word}</span>)}
+    </span>;
+  }
+  if (structure === 'chat') {
+    return <span style={{display:'inline-block',maxWidth:'92%',padding:'.32em .55em',borderRadius:'.7em',background:preset.background ?? '#151519',boxShadow:'0 8px 22px rgba(0,0,0,.35)',lineHeight:1.05}}>{words.map((word,index)=><span key={index} style={{color:index===activeIndex?(preset.activeWord??'#35D7FF'):preset.color,display:'inline-block',marginRight:index===words.length-1?0:'.22em'}}>{word}</span>)}</span>;
+  }
+  if (structure === 'notification') {
+    return <span style={{display:'inline-flex',alignItems:'center',gap:'.28em',padding:'.28em .55em',borderRadius:'999px',background:preset.background??'#E8F7F0',color:preset.color==='#FFFFFF'?'#161616':preset.color,boxShadow:'0 4px 14px rgba(0,0,0,.25)'}}>
+      <span style={{width:'.48em',height:'.48em',borderRadius:'50%',background:preset.activeWord??'#29C58A',flexShrink:0}}/>
+      {words.join(' ')}
+    </span>;
+  }
+  if (structure === 'three-line') {
+    const parts = [words.slice(0,Math.ceil(words.length/3)),words.slice(Math.ceil(words.length/3),Math.ceil(words.length*2/3)),words.slice(Math.ceil(words.length*2/3))];
+    return <span style={{display:'flex',flexDirection:'column',alignItems:'center',lineHeight:.92}}>{parts.filter(p=>p.length).map((part,index)=><span key={index} style={{fontSize:index===1?'1.18em':'.9em',fontWeight:900,color:index===1?(preset.activeWord??'#00D9FF'):preset.color}}>{part.join(' ')}</span>)}</span>;
+  }
   if (structure === 'scattered') {
     return <span style={{display:'block',position:'relative',minHeight:'2.2em'}}>{words.map((word,index)=><span key={`${index}-${word}`} style={{display:'inline-block',position:'relative',margin:index%3===1?'-0.15em .05em':'0 .06em',fontSize:index===Math.floor(words.length/2)?'1.35em':index%3===0?'.62em':'.9em',color:index===Math.floor(words.length/2)?(preset.activeWord??'#FFE600'):preset.color,textShadow:preset.shadow,transform:`rotate(${index%2===0?-4:3}deg) translateY(${index%3===0?'.18em':index%3===2?'-.12em':0})`,zIndex:index===Math.floor(words.length/2)?2:1}}>{word}</span>)}</span>;
   }
@@ -113,10 +138,15 @@ export function CaptionComposition({ src, captions, templateId, transitionName }
             maxHeight: '90%',
             overflow: 'visible',
             textAlign: preset.align,
-            display: preset.structure === 'notification' ? 'inline-block' : 'block',
+            display: 'block',
             border: preset.id === 'boxed' ? '2px solid #FFFFFF' : undefined,
+            borderColor: preset.id === 'boxed' ? (preset.activeWord ?? '#B7F34A') : undefined,
             boxShadow: preset.structure === 'chat' ? '0 8px 24px rgba(0,0,0,.25)' : undefined,
             transform: preset.structure === 'chat' ? 'scale(1.02)' : undefined,
+            ...(preset.id === 'podcast' ? { textAlign:'left' as const, textTransform:'uppercase' as const, fontWeight:900, letterSpacing:'-.035em', maxWidth:'74%', left:'13%' } : {}),
+            ...(preset.id === 'hind' ? { textShadow:'0 0 8px rgba(0,210,255,.5)', fontFamily:'Georgia, serif' } : {}),
+            ...(preset.id === 'boxed' ? { padding:'0.32em 0.42em', borderRadius:'.12em' } : {}),
+            ...(preset.id === 'sliding-highlight' || preset.id === 'dynamic-sliding-highlight' ? { background:'linear-gradient(transparent 58%, rgba(173,255,0,.75) 58%)', padding:'0 .18em' } : {}),
             color: preset.color,
             textShadow: preset.shadow,
             fontFamily: `"${preset.font}", sans-serif`,
