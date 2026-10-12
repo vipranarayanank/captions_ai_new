@@ -53,7 +53,6 @@ export function validateCaptions(captions: Caption[]): string | null {
     }
     if (caption.startMs < previousEnd) return 'Captions must be ordered and must not overlap.';
     if (!caption.text.trim()) return 'Caption text cannot be empty.';
-    if (!caption.words.length) return 'Each caption must contain word-level timing data.';
     if (caption.words.some((word) => !word.id || !word.text.trim() ||
         !Number.isInteger(word.startMs) || !Number.isInteger(word.endMs) ||
         word.startMs < caption.startMs || word.endMs > caption.endMs || word.endMs <= word.startMs)) {
