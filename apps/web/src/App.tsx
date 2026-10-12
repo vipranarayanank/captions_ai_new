@@ -5,6 +5,14 @@ import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, 
 import { renderMediaOnWeb } from '@remotion/web-renderer';
 import { useEditorStore } from './store/editor-store';
 
+const LANGUAGES = [
+  ['en', 'English'], ['ta', 'Tamil'], ['hi', 'Hindi'], ['te', 'Telugu'], ['ml', 'Malayalam'],
+  ['kn', 'Kannada'], ['bn', 'Bengali'], ['mr', 'Marathi'], ['gu', 'Gujarati'], ['pa', 'Punjabi'],
+  ['ur', 'Urdu'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'], ['pt', 'Portuguese'],
+  ['it', 'Italian'], ['ja', 'Japanese'], ['ko', 'Korean'], ['zh', 'Chinese'], ['ar', 'Arabic'],
+  ['id', 'Indonesian'], ['ru', 'Russian'], ['tr', 'Turkish'], ['vi', 'Vietnamese'], ['th', 'Thai'],
+] as const;
+
 const formatTime = (ms: number) => {
   const value = Math.max(0, Math.floor(ms / 1000));
   return `${Math.floor(value / 60).toString().padStart(2, '0')}:${(value % 60).toString().padStart(2, '0')}`;
@@ -38,6 +46,9 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [spokenLanguage, setSpokenLanguage] = useState('en');
+  const [captionLanguage, setCaptionLanguage] = useState('en');
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,23 +71,27 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
     return () => window.clearInterval(timer);
   }, [refresh]);
 
-  const handleFiles = async (file?: File) => {
+  const chooseFile = (file?: File) => {
     if (!file) return;
     setError('');
-    if (!/^video\/(mp4|quicktime|webm|x-matroska)$/.test(file.type) && !/\.(mp4|mov|webm|mkv)$/i.test(file.name)) {
+    if (!/^video\\/(mp4|quicktime|webm|x-matroska)$/.test(file.type) && !/\\.(mp4|mov|webm|mkv)$/i.test(file.name)) {
       setError('Choose an MP4, MOV, WebM, or MKV video.'); return;
     }
-    setUploading(true);
+    setSelectedFile(file);
+  };
+  const handleUpload = async () => {
+    if (!selectedFile) { fileRef.current?.click(); return; }
+    setUploading(true); setError('');
     try {
-      const project = await uploadProject(file);
+      const project = await uploadProject(selectedFile, spokenLanguage, captionLanguage);
       await refresh();
       onOpen(project.id);
     } catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.'); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
   };
-  const onInput = (event: ChangeEvent<HTMLInputElement>) => void handleFiles(event.target.files?.[0]);
+  const onInput = (event: ChangeEvent<HTMLInputElement>) => chooseFile(event.target.files?.[0]);
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault(); setDragging(false); void handleFiles(event.dataTransfer.files?.[0]);
+    event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files?.[0]);
   };
 
   return <main className="app-shell">
@@ -88,15 +103,30 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
       <div className="eyebrow"><span className="sparkle">✳</span> YOUR VIDEO, REIMAGINED</div>
       <h1>Words that make<br /><span>people stop scrolling.</span></h1>
       <p>Turn videos into captivating, styled captions. Upload a clip and let the words do the talking.</p>
-      <div className={`upload-zone ${dragging ? 'dragging' : ''} ${uploading ? 'busy' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
-        onClick={() => !uploading && fileRef.current?.click()} role="button" tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter') fileRef.current?.click(); }}>
-        <input ref={fileRef} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv" hidden onChange={onInput} />
-        <div className="upload-icon">{uploading ? <span className="spinner" /> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" /></svg>}</div>
-        <strong>{uploading ? 'Uploading your video…' : 'Drop your video here, or browse'}</strong>
-        <span>{uploading ? 'This may take a moment' : 'MP4, MOV, WebM or MKV · up to 50 MB'}</span>
-        <button type="button" className="primary-button" disabled={uploading} onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}>{uploading ? 'Uploading' : '＋  Upload a video'}</button>
+      <div className={`upload-card ${dragging ? 'dragging' : ''} ${uploading ? 'busy' : ''}`}>
+        <div className={`upload-zone ${dragging ? 'dragging' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
+          onClick={() => !uploading && fileRef.current?.click()} role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') fileRef.current?.click(); }}>
+          <input ref={fileRef} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv" hidden onChange={onInput} />
+          <div className="upload-icon">{uploading ? <span className="spinner" /> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" /></svg>}</div>
+          <strong>{selectedFile ? selectedFile.name : 'Click or drag video here'}</strong>
+          <span>{selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB · Ready to upload` : 'MP4, MOV, WebM or MKV · Max 500 MB'}</span>
+        </div>
+        <div className="language-fields">
+          <label className="language-label" htmlFor="spoken-language">◎ <span>Audio Spoken</span></label>
+          <select id="spoken-language" className="language-select" value={spokenLanguage} onChange={(e) => setSpokenLanguage(e.target.value)}>
+            {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+          </select>
+          <label className="language-label" htmlFor="caption-language">文 <span>Caption Language</span></label>
+          <select id="caption-language" className="language-select" value={captionLanguage} onChange={(e) => setCaptionLanguage(e.target.value)}>
+            {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+          </select>
+          <p className="language-hint">Choose the spoken language and the language you want your captions in.</p>
+        </div>
+        <button type="button" className="primary-button upload-submit" disabled={uploading} onClick={() => void handleUpload()}>
+          {uploading ? 'Uploading video…' : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
+        </button>
       </div>
       {error && <div className="error-banner">{error}</div>}
     </section>
