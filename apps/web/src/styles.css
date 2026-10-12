@@ -568,3 +568,19 @@ html, body, #root { min-height: 0; }
 }
 .caption-panel .template-position-button:hover{background:#595965;color:#fff}
 .caption-panel .template-position-button.selected{background:#8b35f5;color:#fff}
+
+
+/* Word-level timeline: zoom the ruler, sentence parts, and audio lane together. */
+.timeline-scroll{width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-color:#655276 #17151d;scrollbar-width:thin}
+.timeline-content{min-width:100%;position:relative}
+.timeline-content .timeline-ruler{width:100%;min-width:100%}
+.timeline-content .timeline-track{width:100%;min-width:100%;overflow:hidden}
+.timeline-content .timeline-audio-track{width:calc(100% - 20px);min-width:calc(100% - 20px)}
+.timeline-block{padding:0!important;display:block!important;text-align:left!important}
+.timeline-word{position:absolute;top:0;bottom:0;display:flex;align-items:center;justify-content:center;min-width:0;padding:0 2px;overflow:hidden;text-overflow:clip;white-space:nowrap;border-right:1px solid #c6b2e655;color:#f4efff;font-size:10px;font-weight:600;line-height:1;pointer-events:none}
+.timeline-word:last-child{border-right:0}
+.timeline-block.active .timeline-word{background:#9b83ff12}
+.timeline-zoom-label{font-size:10px;color:#b9b2cb;padding:0 2px}
+.timeline-scroll::-webkit-scrollbar{height:7px}
+.timeline-scroll::-webkit-scrollbar-thumb{background:#5b486c;border-radius:8px}
+@media(max-width:760px){.timeline-scroll{min-width:0}.timeline-content{min-width:100%}.timeline-word{font-size:9px;padding:0 1px}}
