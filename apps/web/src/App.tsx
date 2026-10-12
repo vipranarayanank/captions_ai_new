@@ -4,6 +4,7 @@ import { CaptionComposition } from './components/CaptionComposition';
 import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption } from './lib/api';
 import { renderMediaOnWeb } from '@remotion/web-renderer';
 import { useEditorStore } from './store/editor-store';
+import { CAPTION_TEMPLATES, CAPTION_TRANSITIONS, type CaptionAnimation } from './templates';
 
 const LANGUAGES = [
   ['en', 'English'], ['ta', 'Tamil'], ['hi', 'Hindi'], ['te', 'Telugu'], ['ml', 'Malayalam'],
@@ -160,6 +161,8 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [exportStatus, setExportStatus] = useState('NOT_STARTED');
   const [exportProgress, setExportProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [styleTab, setStyleTab] = useState<'templates' | 'transitions'>('templates');
+  const [transitionName, setTransitionName] = useState<CaptionAnimation | undefined>(undefined);
   const playerRef = useRef<PlayerRef>(null);
   const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
   const lastProjectId = useRef('');
@@ -227,7 +230,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           width: project.width && project.width > 0 ? project.width : 1080,
           height: project.height && project.height > 0 ? project.height : 1920,
         },
-        inputProps: { src: videoSrc, captions, templateId: project.templateId },
+        inputProps: { src: videoSrc, captions, templateId: project.templateId, transitionName },
         container: 'mp4',
         videoCodec: 'h264',
         pageResponsiveness: 'medium',
@@ -357,9 +360,27 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     <div className="editor-workspace">
       <aside className="caption-panel">
         <div className="panel-heading"><div><span className="section-kicker">TRANSCRIPT</span><h2>Captions <span className="count">{captions.length}</span></h2></div><button className="add-caption" onClick={addCaption}>＋</button></div>
-        <div className="template-picker"><div className="template-heading"><span>CAPTION STYLE</span><span>5 presets</span></div><div className="template-grid">{[
-          ['classic', 'Classic', 'Aa'], ['karaoke', 'Karaoke', 'Aa'], ['pop', 'Pop', 'POP'], ['boxed', 'Boxed', 'Aa'], ['neon', 'Neon', 'Aa'],
-        ].map(([key, label, sample]) => <button key={key} className={`template-card ${project.templateId === key ? 'active' : ''} template-${key}`} onClick={() => void changeTemplate(key)}><span>{sample}</span><small>{label}</small></button>)}</div></div>
+        <div className="template-picker">
+          <div className="style-tabs" role="tablist" aria-label="Caption styling">
+            <button role="tab" aria-selected={styleTab === 'templates'} className={styleTab === 'templates' ? 'active' : ''} onClick={() => setStyleTab('templates')}>Templates</button>
+            <button role="tab" aria-selected={styleTab === 'transitions'} className={styleTab === 'transitions' ? 'active' : ''} onClick={() => setStyleTab('transitions')}>Transitions</button>
+          </div>
+          {styleTab === 'templates' ? <>
+            <div className="template-heading"><span>CAPTION TEMPLATES</span><span>{CAPTION_TEMPLATES.length} presets</span></div>
+            <div className="template-grid">{CAPTION_TEMPLATES.map((item) =>
+              <button key={item.id} className={`template-card template-${item.id} ${project.templateId === item.id ? 'active' : ''}`} onClick={() => { setTransitionName(undefined); void changeTemplate(item.id); }}>
+                <span style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,background:item.background,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`}}>Your words</span>
+                <small>{item.name}</small><em>{item.category}</em>
+              </button>)}</div>
+          </> : <>
+            <div className="template-heading"><span>CAPTION TRANSITIONS</span><span>Entrance effects</span></div>
+            <div className="transition-grid">{CAPTION_TRANSITIONS.map((item) =>
+              <button key={item.id} className={`transition-card ${(transitionName ?? CAPTION_TEMPLATES.find(t => t.id === project.templateId)?.animationIn) === item.id ? 'active' : ''}`} onClick={() => setTransitionName(item.id)}>
+                <span className={`transition-sample anim-${item.id}`}>Aa</span><strong>{item.name}</strong><small>{item.description}</small>
+              </button>)}</div>
+            <p className="transition-note">Choose an effect to preview it on your captions. Export uses the same selected effect.</p>
+          </>}
+        </div>
         {captions.length === 0 ? <div className="no-captions"><p>No captions yet.</p><button className="subtle-button" onClick={addCaption}>＋ Add caption</button></div> :
           <div className="caption-list">{captions.map((caption) => <article key={caption.id} className={`caption-row ${selectedId === caption.id ? 'selected' : ''} ${currentMs >= caption.startMs && currentMs < caption.endMs ? 'playing' : ''}`}>
             <button className="caption-time" onClick={() => { selectCaption(caption.id); seek(caption.startMs); }}>{formatTime(caption.startMs)}</button>
@@ -370,7 +391,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
       </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">9:16 · VERTICAL</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={1080} compositionHeight={1920} controls clickToPlay style={{ width: 'min(100%, 340px)', maxHeight: 'min(64vh, 640px)', aspectRatio: '9 / 16', backgroundColor: '#090a10', borderRadius: 12, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={1080} compositionHeight={1920} controls clickToPlay style={{ width: 'min(100%, 340px)', maxHeight: 'min(64vh, 640px)', aspectRatio: '9 / 16', backgroundColor: '#090a10', borderRadius: 12, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
 
       </section>
       <aside className="properties-panel">
