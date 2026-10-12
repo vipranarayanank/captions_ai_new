@@ -40,6 +40,8 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const projectsRef = useRef<Project[]>([]);
+  useEffect(() => { projectsRef.current = projects; }, [projects]);
 
   const refresh = useCallback(async () => {
     try {
@@ -49,7 +51,13 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
       setError(e instanceof Error ? e.message : 'Could not load projects.');
     } finally { setLoading(false); }
   }, []);
-  useEffect(() => { void refresh(); const timer = window.setInterval(() => void refresh(), 2000); return () => window.clearInterval(timer); }, [refresh]);
+  useEffect(() => {
+    void refresh();
+    const timer = window.setInterval(() => {
+      if (projectsRef.current.some((project) => processing(project.status))) void refresh();
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
 
   const handleFiles = async (file?: File) => {
     if (!file) return;
@@ -138,7 +146,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
       try {
         let p = await getProject(id);
         while (alive && processing(p.status)) {
-          await new Promise((resolve) => window.setTimeout(resolve, 2000));
+          await new Promise((resolve) => window.setTimeout(resolve, 5000));
           p = await getProject(id);
         }
         if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); if (p.status === 'READY') { void getExportStatus(id).then((result) => { if (alive) { setExportStatus(result.status); setDownloadUrl(result.downloadUrl); } }).catch(() => undefined); } }
@@ -175,7 +183,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
       }
     };
     void poll();
-    const timer = window.setInterval(() => void poll(), 2000);
+    const timer = window.setInterval(() => void poll(), 5000);
     return () => { alive = false; window.clearInterval(timer); };
   }, [exporting, id]);
 
