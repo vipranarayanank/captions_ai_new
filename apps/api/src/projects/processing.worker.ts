@@ -41,6 +41,31 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
     await this.connection?.quit();
   }
 
+  private async romanizeCaptions(captions: Array<{ id: string; startMs: number; endMs: number; text: string; words: Word[] }>, language: string) {
+    const apiKey = this.config.get<string>('GEMINI_API_KEY');
+    if (!apiKey) throw new Error('Tanglish/Hinglish captions need GEMINI_API_KEY. Add it to the API environment or choose native-script captions.');
+    const languageName = language === 'ta' ? 'Tamil' : 'Hindi';
+    const model = this.config.get<string>('GEMINI_TRANSLATE_MODEL') ?? 'gemini-2.5-flash';
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `Romanize these ${languageName} caption strings into natural everyday ${language === 'ta' ? 'Tanglish (Tamil spoken words written with English letters)' : 'Hinglish (Hindi spoken words written with English letters)'}. Do not translate their meaning into English. Keep each caption's spoken words and order. Return ONLY a JSON array of strings with exactly ${captions.length} items. Captions: ${JSON.stringify(captions.map(caption => caption.text))}` }] }],
+        generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
+      }),
+    });
+    if (!response.ok) throw new Error(`Romanized caption generation failed (HTTP ${response.status}). Check GEMINI_API_KEY.`);
+    const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+    const raw = payload.candidates?.[0]?.content?.parts?.map(part => part.text ?? '').join('').trim();
+    if (!raw) throw new Error('The caption romanization provider returned an empty response.');
+    let romanized: unknown;
+    try { romanized = JSON.parse(raw); } catch { throw new Error('The caption romanization provider returned invalid JSON.'); }
+    if (!Array.isArray(romanized) || romanized.length !== captions.length || romanized.some(item => typeof item !== 'string')) {
+      throw new Error('The caption romanization provider returned an unexpected number of captions.');
+    }
+    return captions.map((caption, index) => ({ ...caption, text: romanized[index] as string, words: [] }));
+  }
+
   private async process(projectId: string) {
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) return;
@@ -104,7 +129,10 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
         })));
       }
       if (!allWords.length) throw new Error('No speech was detected in this video.');
-      const captions = groupWordsIntoCaptions(allWords);
+      let captions = groupWordsIntoCaptions(allWords);
+      if (project.captionStyle === 'roman' && ['ta', 'hi'].includes(project.sourceLanguage)) {
+        captions = await this.romanizeCaptions(captions, project.sourceLanguage);
+      }
       await this.prisma.project.update({
         where: { id: projectId },
         data: { status: 'READY', language: language ?? null, captions: captions as any, errorMessage: null },
