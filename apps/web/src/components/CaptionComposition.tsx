@@ -67,9 +67,17 @@ function renderWords(
   editable = false,
   onSelectWord?: (wordId: string) => void,
   onMoveWord?: (wordId: string, x: number, y: number) => void,
+  displayMode: 'word' | 'line' = 'word',
+  wordsOnScreen = 0,
+  activeWordColor?: string,
 ): React.ReactNode {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return null;
+  if (displayMode === 'line') return <span>{text}</span>;
+  const visibleCount = wordsOnScreen > 0 ? wordsOnScreen : words.length;
+  const chunkIndex = Math.floor(((timeMs - startMs) / Math.max(1, endMs - startMs)) * Math.ceil(words.length / visibleCount));
+  const wordOffset = wordsOnScreen > 0 ? Math.max(0, chunkIndex) * visibleCount : 0;
+  const visibleWords = wordsOnScreen > 0 ? words.slice(wordOffset, wordOffset + visibleCount) : words;
 
   const activeIndex = Math.min(
     words.length - 1,
@@ -85,11 +93,11 @@ function renderWords(
   }
   if (structure === 'highlight') {
     return <span style={{display:'inline-block',padding:'.16em .34em',borderRadius:'.22em',background:preset.background ?? 'rgba(0,0,0,.72)',lineHeight:1.02}}>
-      {words.map((word,index)=><span key={index} style={{display:'inline-block',marginRight:index===words.length-1?0:'.22em',color:index===activeIndex?(preset.activeWord??'#00D9FF'):preset.color,fontWeight:index===activeIndex?900:preset.weight,textShadow:'none'}}>{word}</span>)}
+      {words.map((word,index)=><span key={index} style={{display:'inline-block',marginRight:index===words.length-1?0:'.22em',color:index===activeIndex?(activeWordColor ?? preset.activeWord ?? '#00D9FF'):preset.color,fontWeight:index===activeIndex?900:preset.weight,textShadow:'none'}}>{word}</span>)}
     </span>;
   }
   if (structure === 'chat') {
-    return <span style={{display:'inline-block',maxWidth:'92%',padding:'.32em .55em',borderRadius:'.7em',background:preset.background ?? '#151519',boxShadow:'0 8px 22px rgba(0,0,0,.35)',lineHeight:1.05}}>{words.map((word,index)=><span key={index} style={{color:index===activeIndex?(preset.activeWord??'#35D7FF'):preset.color,display:'inline-block',marginRight:index===words.length-1?0:'.22em'}}>{word}</span>)}</span>;
+    return <span style={{display:'inline-block',maxWidth:'92%',padding:'.32em .55em',borderRadius:'.7em',background:preset.background ?? '#151519',boxShadow:'0 8px 22px rgba(0,0,0,.35)',lineHeight:1.05}}>{words.map((word,index)=><span key={index} style={{color:index===activeIndex?(activeWordColor ?? preset.activeWord ?? '#35D7FF'):preset.color,display:'inline-block',marginRight:index===words.length-1?0:'.22em'}}>{word}</span>)}</span>;
   }
   if (structure === 'notification') {
     return <span style={{display:'inline-flex',alignItems:'center',gap:'.28em',padding:'.28em .55em',borderRadius:'999px',background:preset.background??'#E8F7F0',color:preset.color==='#FFFFFF'?'#161616':preset.color,boxShadow:'0 4px 14px rgba(0,0,0,.25)'}}>
@@ -115,7 +123,8 @@ function renderWords(
     const split = Math.max(1, Math.ceil(words.length / 2));
     return <span style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'.02em'}}><span>{words.slice(0,split).join(' ')}</span><span style={{fontFamily:'cursive',fontStyle:'italic',fontWeight:500,color:preset.activeWord??'#FFFFFF',fontSize:'.82em',textShadow:'0 0 8px rgba(255,255,255,.45)'}}>{words.slice(split).join(' ')}</span></span>;
   }
-  return words.map((word, index) => {
+  return visibleWords.map((word, visibleIndex) => {
+    const index = visibleIndex + wordOffset;
     const revealed = preset.display !== 'wordByWord' || timeMs >= startMs + index * ((endMs - startMs) / words.length);
     if (!revealed) return null;
     const progress = wordProgress(timeMs, startMs, endMs, index, words.length, preset);
@@ -191,9 +200,9 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             ...(preset.id === 'hind' ? { textShadow:'0 0 8px rgba(0,210,255,.5)', fontFamily:'Georgia, serif' } : {}),
             ...(preset.id === 'boxed' ? { padding:'0.32em 0.42em', borderRadius:'.12em' } : {}),
             ...(preset.id === 'sliding-highlight' || preset.id === 'dynamic-sliding-highlight' ? { background:'linear-gradient(transparent 58%, rgba(173,255,0,.75) 58%)', padding:'0 .18em' } : {}),
-            color: preset.color,
+            color: active.textColor ?? preset.color,
             textShadow: preset.shadow,
-            fontFamily: `"${schema.typography.fontFamily}", sans-serif`,
+            fontFamily: `"${active.fontFamily ?? schema.typography.fontFamily}", sans-serif`,
             fontWeight: schema.typography.fontWeight,
             fontSize,
             lineHeight: schema.layout.lineHeight,
