@@ -50,6 +50,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [spokenLanguage, setSpokenLanguage] = useState('en');
   const [captionStyle, setCaptionStyle] = useState('native');
+  const [captionPosition, setCaptionPosition] = useState<'top' | 'middle' | 'bottom'>('middle');
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -292,8 +293,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     catch (e) { setError(e instanceof Error ? e.message : 'Could not update style.'); }
   };
   const changeCaptionPosition = (position: 'top' | 'middle' | 'bottom') => {
-    if (!project) return;
-    setProject({ ...project, captionPosition: position } as typeof project);
+    setCaptionPosition(position);
   };
   const rename = async () => {
     setRenaming(false);
@@ -398,7 +398,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
                 </span>
                 <small>{item.name}</small>
                 {project.templateId === item.id && <div className="template-position-controls" role="group" aria-label="Caption position">
-                  {(['top','middle','bottom'] as const).map(position => <button key={position} type="button" className={`template-position-button ${((project as typeof project & {captionPosition?: string}).captionPosition ?? 'middle') === position ? 'selected' : ''}`} onClick={event => { event.stopPropagation(); changeCaptionPosition(position); }}>{position === 'middle' ? 'Middle' : position === 'top' ? 'Top' : 'Bottom'}</button>)}
+                  {(['top','middle','bottom'] as const).map(position => <button key={position} type="button" className={`template-position-button ${captionPosition === position ? 'selected' : ''}`} onClick={event => { event.stopPropagation(); changeCaptionPosition(position); }}>{position === 'middle' ? 'Middle' : position === 'top' ? 'Top' : 'Bottom'}</button>)}
                 </div>}
               </button>)}</div>
           </> : styleTab === 'transitions' ? <>
@@ -425,7 +425,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         </div>      </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">{previewDimensions.width >= previewDimensions.height ? '16:9 · HORIZONTAL' : '9:16 · VERTICAL'}</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
 
       </section>
       <aside className="properties-panel legacy-properties-panel">
