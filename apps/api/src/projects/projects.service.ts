@@ -125,7 +125,7 @@ export class ProjectsService {
     const match = /^bytes=(\d*)-(\d*)$/.exec(header);
     if (!match || size <= 0) throw new BadRequestException('Invalid byte range.');
     const start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
-    const end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+    const end = match[1] && match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
     if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start >= size || end < start) {
       throw new BadRequestException('Requested byte range is not satisfiable.');
     }
