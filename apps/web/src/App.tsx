@@ -1,7 +1,7 @@
 import { ChangeEvent, DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Player, PlayerRef } from '@remotion/player';
 import { CaptionComposition } from './components/CaptionComposition';
-import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption } from './lib/api';
+import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption, startExport, getExportStatus } from './lib/api';
 import { useEditorStore } from './store/editor-store';
 
 const formatTime = (ms: number) => {
@@ -115,6 +115,9 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [currentMs, setCurrentMs] = useState(0);
   const [title, setTitle] = useState('');
   const [renaming, setRenaming] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportStatus, setExportStatus] = useState('NOT_STARTED');
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const playerRef = useRef<PlayerRef>(null);
   const lastProjectId = useRef('');
   const project = useEditorStore((s) => s.project);
@@ -154,6 +157,31 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     }, 1500);
     return () => window.clearTimeout(timer);
   }, [captions, id, project]);
+
+  useEffect(() => {
+    if (!exporting) return;
+    let alive = true;
+    const poll = async () => {
+      try {
+        const result = await getExportStatus(id);
+        if (!alive) return;
+        setExportStatus(result.status);
+        if (result.status === 'READY') { setDownloadUrl(result.downloadUrl); setExporting(false); setSaveStatus('Export ready'); }
+        else if (result.status === 'FAILED') { setExporting(false); setError(result.errorMessage || 'Export failed.'); }
+      } catch (e) {
+        if (alive) { setExporting(false); setError(e instanceof Error ? e.message : 'Could not check export status.'); }
+      }
+    };
+    void poll();
+    const timer = window.setInterval(() => void poll(), 2000);
+    return () => { alive = false; window.clearInterval(timer); };
+  }, [exporting, id]);
+
+  const requestExport = async () => {
+    setError(''); setDownloadUrl(null); setExportStatus('QUEUED');
+    try { await startExport(id); setExporting(true); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Could not start export.'); }
+  };
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -201,7 +229,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     <header className="editor-topbar">
       <button className="back-button" onClick={onBack}>← <span>Projects</span></button>
       <div className="editor-project-title">{renaming ? <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => void rename()} onKeyDown={(e) => e.key === 'Enter' && void rename()} autoFocus /> : <button onClick={() => setRenaming(true)} title="Rename project">{project.title} <span>✎</span></button>}<small><span className="cloud-dot" /> {saveStatus}</small></div>
-      <div className="editor-actions"><button className="icon-button" title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button className="icon-button" title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button><button className="primary-button small" disabled>Export video <span>↗</span></button></div>
+      <div className="editor-actions"><button className="icon-button" title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button className="icon-button" title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>{downloadUrl && exportStatus === 'READY' ? <a className="primary-button small" href={downloadUrl} target="_blank" rel="noreferrer">Download MP4 <span>↓</span></a> : <button className="primary-button small" disabled={exporting || project?.status !== 'READY'} onClick={() => void requestExport()}>{exporting ? 'Exporting…' : 'Export video'} <span>↗</span></button>}</div>
     </header>
     {error && <div className="error-banner editor-error">{error}<button onClick={() => setError('')}>×</button></div>}
     <div className="editor-workspace">
