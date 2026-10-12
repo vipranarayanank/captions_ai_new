@@ -291,6 +291,10 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     try { const updated = await patchProject(id, { templateId }); setProject({ ...updated, captions }); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not update style.'); }
   };
+  const changeCaptionPosition = (position: 'top' | 'middle' | 'bottom') => {
+    if (!project) return;
+    setProject({ ...project, captionPosition: position } as typeof project);
+  };
   const rename = async () => {
     setRenaming(false);
     if (!title.trim() || title.trim() === project?.title || !project) return;
@@ -393,6 +397,9 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
                   {item.id === 'hind' ? <><span>this is</span><span>sample text</span><i>nono</i></> : item.id === 'boxed' ? <><span>this is sample</span><i>text</i></> : item.id === 'podcast' ? <><b>I'M NOT</b><b>GOING TO DO IT</b><b>BECAUSE</b><b>THERE ARE</b></> : item.id === 'master' ? <><span>this is a</span><b>choice</b></> : item.id === 'simple' ? <><b>this is</b><b>sample</b><b>text</b></> : item.id === 'sliding-highlight' ? <b>this is sample</b> : <b>{item.id === 'mrbeast-classic' ? 'THIS IS' : item.name.toUpperCase()}</b>}
                 </span>
                 <small>{item.name}</small>
+                {project.templateId === item.id && <div className="template-position-controls" role="group" aria-label="Caption position">
+                  {(['top','middle','bottom'] as const).map(position => <button key={position} type="button" className={`template-position-button ${((project as typeof project & {captionPosition?: string}).captionPosition ?? 'middle') === position ? 'selected' : ''}`} onClick={event => { event.stopPropagation(); changeCaptionPosition(position); }}>{position === 'middle' ? 'Middle' : position === 'top' ? 'Top' : 'Bottom'}</button>)}
+                </div>}
               </button>)}</div>
           </> : styleTab === 'transitions' ? <>
             <div className="template-heading"><span>CAPTION TRANSITIONS</span><span>Entrance effects</span></div>
