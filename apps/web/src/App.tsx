@@ -1,7 +1,8 @@
 import { ChangeEvent, DragEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Player, PlayerRef } from '@remotion/player';
 import { CaptionComposition } from './components/CaptionComposition';
-import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption, startExport, getExportStatus } from './lib/api';
+import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption } from './lib/api';
+import { renderMediaOnWeb } from '@remotion/web-renderer';
 import { useEditorStore } from './store/editor-store';
 
 const formatTime = (ms: number) => {
@@ -125,6 +126,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [renaming, setRenaming] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('NOT_STARTED');
+  const [exportProgress, setExportProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const playerRef = useRef<PlayerRef>(null);
   const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
@@ -149,7 +151,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           await new Promise((resolve) => window.setTimeout(resolve, 5000));
           p = await getProject(id);
         }
-        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); if (p.status === 'READY') { void getExportStatus(id).then((result) => { if (alive) { setExportStatus(result.status); setDownloadUrl(result.downloadUrl); } }).catch(() => undefined); } }
+        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); }
       } catch (e) { if (alive) setError(e instanceof Error ? e.message : 'Could not load project.'); }
       finally { if (alive) setLoading(false); }
     };
@@ -168,29 +170,49 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     return () => window.clearTimeout(timer);
   }, [captions, id, project]);
 
-  useEffect(() => {
-    if (!exporting) return;
-    let alive = true;
-    const poll = async () => {
-      try {
-        const result = await getExportStatus(id);
-        if (!alive) return;
-        setExportStatus(result.status);
-        if (result.status === 'READY') { setDownloadUrl(result.downloadUrl); setExporting(false); setSaveStatus('Export ready'); }
-        else if (result.status === 'FAILED') { setExporting(false); setError(result.errorMessage || 'Export failed.'); }
-      } catch (e) {
-        if (alive) { setExporting(false); setError(e instanceof Error ? e.message : 'Could not check export status.'); }
-      }
-    };
-    void poll();
-    const timer = window.setInterval(() => void poll(), 5000);
-    return () => { alive = false; window.clearInterval(timer); };
-  }, [exporting, id]);
-
   const requestExport = async () => {
-    setError(''); setDownloadUrl(null); setExportStatus('QUEUED'); setExporting(true);
-    try { await startExport(id); }
-    catch (e) { setExporting(false); setError(e instanceof Error ? e.message : 'Could not start export.'); }
+    if (!project || !project.durationSec) {
+      setError('Video duration is unavailable. Reload the project and try again.');
+      return;
+    }
+    setError('');
+    setExporting(true);
+    setExportProgress(0);
+    setExportStatus('PROCESSING');
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    setDownloadUrl(null);
+    try {
+      // Save the latest caption edits before starting the local browser render.
+      await saveCaptions(id, captions);
+      const fps = project.fps && project.fps > 0 ? Math.round(project.fps) : 30;
+      const durationInFrames = Math.max(1, Math.ceil(project.durationSec * fps));
+      const result = await renderMediaOnWeb({
+        composition: {
+          id: 'CaptionsVideo',
+          component: CaptionComposition,
+          durationInFrames,
+          fps,
+          width: project.width && project.width > 0 ? project.width : 1080,
+          height: project.height && project.height > 0 ? project.height : 1920,
+        },
+        inputProps: { src: videoSrc, captions, templateId: project.templateId },
+        container: 'mp4',
+        videoCodec: 'h264',
+        pageResponsiveness: 'medium',
+        onProgress: ({ progress }) => setExportProgress(Math.min(100, Math.floor(progress * 100))),
+      });
+      const blob = await result.getBlob();
+      const url = URL.createObjectURL(blob);
+      setDownloadUrl(url);
+      setExportStatus('READY');
+      setExportProgress(100);
+      setSaveStatus('Export ready');
+    } catch (e) {
+      setExportStatus('FAILED');
+      setError(e instanceof Error ? e.message : 'Browser video export failed. Try Chrome or a shorter video.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   useEffect(() => {
@@ -297,7 +319,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     <header className="editor-topbar">
       <button className="back-button" onClick={onBack}>← <span>Projects</span></button>
       <div className="editor-project-title">{renaming ? <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => void rename()} onKeyDown={(e) => e.key === 'Enter' && void rename()} autoFocus /> : <button onClick={() => setRenaming(true)} title="Rename project">{project.title} <span>✎</span></button>}<small><span className="cloud-dot" /> {saveStatus}</small></div>
-      <div className="editor-actions"><button className="icon-button" title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button className="icon-button" title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>{downloadUrl && exportStatus === 'READY' ? <a className="primary-button small" href={downloadUrl} target="_blank" rel="noreferrer">Download MP4 <span>↓</span></a> : <button className="primary-button small" disabled={exporting || project?.status !== 'READY'} onClick={() => void requestExport()}>{exporting ? 'Exporting…' : 'Export video'} <span>↗</span></button>}</div>
+      <div className="editor-actions"><button className="icon-button" title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button className="icon-button" title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>{downloadUrl && exportStatus === 'READY' ? <a className="primary-button small" href={downloadUrl} download={`${project.title || 'captify-video'}.mp4`}>Download MP4 <span>↓</span></a> : <button className="primary-button small" disabled={exporting || project?.status !== 'READY'} onClick={() => void requestExport()}>{exporting ? `Rendering ${exportProgress}%…` : 'Export video'} <span>↗</span></button>}</div>
     </header>
     {error && <div className="error-banner editor-error">{error}<button onClick={() => setError('')}>×</button></div>}
     <div className="editor-workspace">
