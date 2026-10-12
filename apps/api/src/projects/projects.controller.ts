@@ -25,8 +25,8 @@ export class ProjectsController {
     }),
     limits: { fileSize: Number(process.env.MAX_UPLOAD_MB ?? 500) * 1024 * 1024 },
   }))
-  create(@UploadedFile() file: Express.Multer.File, projects: ProjectsService) {
-    return projects.upload(file);
+  create(@UploadedFile() file: Express.Multer.File) {
+    return this.projects.upload(file);
   }
 
   constructor(private readonly projects: ProjectsService) {}
@@ -69,10 +69,5 @@ export class ProjectsController {
     }
     stream.on('error', () => { if (!res.headersSent) res.status(502); res.end(); });
     stream.pipe(res);
-  }
-
-  @Patch('projects/:id/retry')
-  async retry(@Param('id') id: string) {
-    throw new BadRequestException('Retry endpoint is not available yet.');
   }
 }
