@@ -36,6 +36,8 @@ export interface Project {
   language: string | null;
   sourceLanguage: string;
   templateId: string;
+  backgroundColor?: string;
+  backgroundOnly?: boolean;
   captions: Caption[];
   createdAt: string;
   updatedAt: string;
@@ -60,7 +62,7 @@ export const uploadProject = (file: File, sourceLanguage = 'en', captionStyle = 
   const body = new FormData(); body.append('video', file); body.append('sourceLanguage', sourceLanguage); body.append('captionStyle', captionStyle);
   return request<Project>('/projects', { method: 'POST', body });
 };
-export const patchProject = (id: string, body: Partial<Pick<Project, 'title' | 'templateId'>>) =>
+export const patchProject = (id: string, body: Partial<Pick<Project, 'title' | 'templateId' | 'backgroundColor' | 'backgroundOnly'>>) =>
   request<Project>(`/projects/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 export const saveCaptions = (id: string, captions: Caption[]) =>
   request<Project>(`/projects/${id}/captions`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ captions }) });
