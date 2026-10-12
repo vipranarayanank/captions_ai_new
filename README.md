@@ -33,8 +33,8 @@ Original videos and extracted audio are stored in the private Supabase Storage b
 - `npm run db:generate` — generate Prisma Client
 - `npm run db:push` — sync Prisma schema to the configured database
 - `npm run build` — generate Prisma Client and build frontend and API
-- `npm run test --workspace @captions-ai/api` — API unit tests
+- `npm run test` — API unit tests\n- `npm run lint` — lint TypeScript files\n- `npm run format` — format supported source and documentation files
 
-## Important MVP limitations
+## Processing and export\n- The API process runs the BullMQ transcription and export workers locally. Keep Redis running while the API is running.\n- Export bundles the Remotion composition once and renders MP4 files in the background. Rendering requires sufficient memory/CPU and a working headless Chromium environment.\n\n## Important MVP limitations
 - Authentication and project ownership are not implemented. Do not expose this deployment publicly until access control is added.
 - Export and processing require FFmpeg/ffprobe, Redis, Supabase Storage credentials, and an OpenAI API key.
