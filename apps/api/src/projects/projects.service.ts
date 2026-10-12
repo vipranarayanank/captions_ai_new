@@ -145,8 +145,8 @@ export class ProjectsService {
   }
 
   private normalizeCaptionStyle(language?: string, style?: string) {
-    if (language === 'ta' || language === 'hi') return style === 'roman' ? 'roman' : 'native';
-    return 'native';
+    if (!language || language === 'en') return 'native';
+    return style === 'roman' || style === 'english' ? style : 'native';
   }
 
   private toDto(project: Project) {
