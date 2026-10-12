@@ -9,13 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@remotion/player": "^4.0.300",
-    "@remotion/captions": "^4.0.300",
+    "@remotion/player": "4.0.534",
+    "@remotion/captions": "4.0.534",
     "@vitejs/plugin-react": "^4.3.4",
-    "remotion": "^4.0.300",
+    "remotion": "4.0.534",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "@remotion/media": "4.0.534",
+    "@remotion/web-renderer": "4.0.534"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
