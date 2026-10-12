@@ -22,7 +22,7 @@ export class ProjectsService {
     private readonly config: ConfigService,
   ) {}
 
-  async upload(file: Express.Multer.File) {
+  async upload(file: Express.Multer.File, languages: { sourceLanguage?: string; captionLanguage?: string } = {}) {
     if (!file) throw new BadRequestException('Choose a video file.');
     const ext = extname(file.originalname).toLowerCase();
     const maxBytes = Number(this.config.get('MAX_UPLOAD_MB') ?? 500) * 1024 * 1024;
@@ -45,6 +45,8 @@ export class ProjectsService {
           videoKey,
           fileSizeBytes: file.size,
           status: 'UPLOADED',
+          sourceLanguage: this.normalizeLanguage(languages.sourceLanguage),
+          captionLanguage: this.normalizeLanguage(languages.captionLanguage),
         },
       });
       await this.queue.enqueue(project.id);
@@ -135,6 +137,11 @@ export class ProjectsService {
       throw new BadRequestException('Requested byte range is not satisfiable.');
     }
     return { start, end };
+  }
+
+  private normalizeLanguage(value?: string) {
+    const supported = new Set(['en','ta','hi','te','ml','kn','bn','mr','gu','pa','ur','es','fr','de','pt','it','ja','ko','zh','ar','id','ru','tr','vi','th']);
+    return value && supported.has(value) ? value : 'en';
   }
 
   private toDto(project: Project) {
