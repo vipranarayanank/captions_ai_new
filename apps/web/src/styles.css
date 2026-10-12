@@ -489,3 +489,56 @@ html, body, #root { min-height: 0; }
  .caption-panel .template-card .template-thumb{min-height:76px;padding:6px 3px}
  .caption-panel .template-card small{font-size:12px}
 }
+
+
+/* Fix gallery rows being vertically compressed by the editor's constrained layout. */
+.caption-panel .template-grid{
+  grid-auto-rows:max-content !important;
+  grid-template-rows:none !important;
+  align-items:stretch !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  max-height:none !important;
+  height:100% !important;
+  min-height:0 !important;
+  flex:1 1 auto !important;
+}
+.caption-panel .template-card{
+  height:auto !important;
+  min-height:230px !important;
+  max-height:none !important;
+  overflow:visible !important;
+  align-self:stretch !important;
+  justify-content:flex-start !important;
+  padding:18px !important;
+  gap:12px !important;
+}
+.caption-panel .template-card .template-thumb{
+  display:flex !important;
+  width:100% !important;
+  height:auto !important;
+  min-height:155px !important;
+  max-height:none !important;
+  aspect-ratio: .88 !important;
+  flex:0 0 auto !important;
+  border-radius:10px !important;
+}
+.caption-panel .template-card small{
+  display:block !important;
+  min-height:20px !important;
+  height:auto !important;
+  overflow:visible !important;
+  white-space:normal !important;
+  font-size:15px !important;
+  line-height:1.25 !important;
+  color:#f7f4fc !important;
+}
+@media(max-width:1100px){
+ .caption-panel .template-card{min-height:190px !important;padding:12px !important}
+ .caption-panel .template-card .template-thumb{min-height:120px !important}
+}
+@media(max-width:760px){
+ .caption-panel .template-card{min-height:145px !important;padding:8px !important;gap:8px !important}
+ .caption-panel .template-card .template-thumb{min-height:90px !important}
+ .caption-panel .template-card small{font-size:12px !important}
+}
