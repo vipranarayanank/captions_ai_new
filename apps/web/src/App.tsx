@@ -239,7 +239,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           width: project.width && project.width > 0 ? project.width : 1080,
           height: project.height && project.height > 0 ? project.height : 1920,
         },
-        inputProps: { src: videoSrc, captions, templateId: project.templateId, transitionName },
+        inputProps: { src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition },
         container: 'mp4',
         videoCodec: 'h264',
         pageResponsiveness: 'medium',
