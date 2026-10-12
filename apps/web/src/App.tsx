@@ -357,6 +357,9 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     <div className="editor-workspace">
       <aside className="caption-panel">
         <div className="panel-heading"><div><span className="section-kicker">TRANSCRIPT</span><h2>Captions <span className="count">{captions.length}</span></h2></div><button className="add-caption" onClick={addCaption}>＋</button></div>
+        <div className="template-picker"><div className="template-heading"><span>CAPTION STYLE</span><span>5 presets</span></div><div className="template-grid">{[
+          ['classic', 'Classic', 'Aa'], ['karaoke', 'Karaoke', 'Aa'], ['pop', 'Pop', 'POP'], ['boxed', 'Boxed', 'Aa'], ['neon', 'Neon', 'Aa'],
+        ].map(([key, label, sample]) => <button key={key} className={`template-card ${project.templateId === key ? 'active' : ''} template-${key}`} onClick={() => void changeTemplate(key)}><span>{sample}</span><small>{label}</small></button>)}</div></div>
         {captions.length === 0 ? <div className="no-captions"><p>No captions yet.</p><button className="subtle-button" onClick={addCaption}>＋ Add caption</button></div> :
           <div className="caption-list">{captions.map((caption) => <article key={caption.id} className={`caption-row ${selectedId === caption.id ? 'selected' : ''} ${currentMs >= caption.startMs && currentMs < caption.endMs ? 'playing' : ''}`}>
             <button className="caption-time" onClick={() => { selectCaption(caption.id); seek(caption.startMs); }}>{formatTime(caption.startMs)}</button>
@@ -368,9 +371,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">9:16 · VERTICAL</span></div>
         <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={1080} compositionHeight={1920} controls clickToPlay style={{ width: 'min(100%, 340px)', maxHeight: 'min(64vh, 640px)', aspectRatio: '9 / 16', backgroundColor: '#090a10', borderRadius: 12, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
-        <div className="template-picker"><div className="template-heading"><span>CAPTION STYLE</span><span>5 presets</span></div><div className="template-grid">{[
-          ['classic', 'Classic', 'Aa'], ['karaoke', 'Karaoke', 'Aa'], ['pop', 'Pop', 'POP'], ['boxed', 'Boxed', 'Aa'], ['neon', 'Neon', 'Aa'],
-        ].map(([key, label, sample]) => <button key={key} className={`template-card ${project.templateId === key ? 'active' : ''} template-${key}`} onClick={() => void changeTemplate(key)}><span>{sample}</span><small>{label}</small></button>)}</div></div>
+
       </section>
       <aside className="properties-panel">
         <div className="panel-heading"><div><span className="section-kicker">DETAILS</span><h2>Properties</h2></div></div>
