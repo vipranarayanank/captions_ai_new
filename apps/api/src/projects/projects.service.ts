@@ -79,7 +79,7 @@ export class ProjectsService {
       update.title = title;
     }
     if (typeof data.templateId === 'string') {
-      if (!['classic', 'karaoke', 'pop', 'boxed', 'neon'].includes(data.templateId)) throw new BadRequestException('Unknown caption template.');
+      if (!['classic', 'karaoke', 'pop', 'boxed', 'neon', 'clean', 'subtle', 'highlight-run', 'stack', 'typewriter', 'glow', 'marker', 'bounce', 'cinematic'].includes(data.templateId)) throw new BadRequestException('Unknown caption template.');
       update.templateId = data.templateId;
     }
     return this.toDto(await this.prisma.project.update({ where: { id }, data: update }));
