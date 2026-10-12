@@ -162,7 +162,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
 
   return (
     <AbsoluteFill style={{ backgroundColor, justifyContent: 'center', alignItems: 'center' }}>
-      {backgroundOnly ? <Audio src={src} /> : <Video src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+      {backgroundOnly ? <Audio src={src} /> : <Video src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />}
       {active && preset.id !== 'no-caption' && (
         <div
           onClick={editable ? () => onSelectCaption?.(active.id) : undefined}
