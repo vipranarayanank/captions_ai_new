@@ -33,6 +33,6 @@ describe('groupWordsIntoCaptions', () => {
     const result = groupWordsIntoCaptions(words);
     expect(validateCaptions(result)).toBeNull();
     expect(validateCaptions([{ ...result[0], startMs: 0, endMs: 600 }, { ...result[1], startMs: 500 }])).toContain('overlap');
-    expect(validateCaptions([{ ...result[0], words: [] }])).toContain('word-level');
+    expect(validateCaptions([{ ...result[0], words: [{ ...result[0].words[0], id: '' }] }])).toContain('word');
   });
 });
