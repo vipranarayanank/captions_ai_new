@@ -73,7 +73,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const chooseFile = (file?: File) => {
     if (!file) return;
     setError('');
-    if (!/^video\\/(mp4|quicktime|webm|x-matroska)$/.test(file.type) && !/\\.(mp4|mov|webm|mkv)$/i.test(file.name)) {
+    if (!/^video\/(mp4|quicktime|webm|x-matroska)$/.test(file.type) && !/\.(mp4|mov|webm|mkv)$/i.test(file.name)) {
       setError('Choose an MP4, MOV, WebM, or MKV video.'); return;
     }
     setSelectedFile(file);
