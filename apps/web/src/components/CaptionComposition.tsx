@@ -47,6 +47,7 @@ function renderWords(
   endMs: number,
   preset: CaptionPreset,
   animation: CaptionAnimation,
+  structure: string,
 ): React.ReactNode {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return null;
@@ -56,10 +57,20 @@ function renderWords(
     Math.max(0, Math.floor(((timeMs - startMs) / Math.max(1, endMs - startMs)) * words.length)),
   );
 
+  if (structure === 'scattered') {
+    return <span style={{display:'block',position:'relative',minHeight:'2.2em'}}>{words.map((word,index)=><span key={`${index}-${word}`} style={{display:'inline-block',position:'relative',margin:index%3===1?'-0.15em .05em':'0 .06em',fontSize:index===Math.floor(words.length/2)?'1.35em':index%3===0?'.62em':'.9em',color:index===Math.floor(words.length/2)?(preset.activeWord??'#FFE600'):preset.color,textShadow:preset.shadow,transform:`rotate(${index%2===0?-4:3}deg) translateY(${index%3===0?'.18em':index%3===2?'-.12em':0})`,zIndex:index===Math.floor(words.length/2)?2:1}}>{word}</span>)}</span>;
+  }
+  if (structure === 'cutout') {
+    return <span style={{display:'inline-flex',flexWrap:'wrap',justifyContent:'center',gap:'.08em'}}>{words.map((word,index)=><span key={`${index}-${word}`} style={{display:'inline-block',padding:'.02em .08em',background:index%2?'#F6D84A':'#F7F0D8',color:index%2?'#171717':'#B52037',transform:`rotate(${index%2?3:-2}deg)`,textShadow:'none',boxShadow:'0 2px 0 rgba(0,0,0,.35)'}}>{word}</span>)}</span>;
+  }
   if (preset.display === 'block') {
     return <span style={animationStyle(animation, progressAt(timeMs, startMs, preset.durationMs))}>{text}</span>;
   }
 
+  if (structure === 'headline-script' && words.length > 1) {
+    const split = Math.max(1, Math.ceil(words.length / 2));
+    return <span style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'.02em'}}><span>{words.slice(0,split).join(' ')}</span><span style={{fontFamily:'cursive',fontStyle:'italic',fontWeight:500,color:preset.activeWord??'#FFFFFF',fontSize:'.82em',textShadow:'0 0 8px rgba(255,255,255,.45)'}}>{words.slice(split).join(' ')}</span></span>;
+  }
   return words.map((word, index) => {
     const revealed = preset.display !== 'wordByWord' || timeMs >= startMs + index * ((endMs - startMs) / words.length);
     if (!revealed) return null;
@@ -102,6 +113,10 @@ export function CaptionComposition({ src, captions, templateId, transitionName }
             maxHeight: '90%',
             overflow: 'visible',
             textAlign: preset.align,
+            display: preset.structure === 'notification' ? 'inline-block' : 'block',
+            border: preset.id === 'boxed' ? '2px solid #FFFFFF' : undefined,
+            boxShadow: preset.structure === 'chat' ? '0 8px 24px rgba(0,0,0,.25)' : undefined,
+            transform: preset.structure === 'chat' ? 'scale(1.02)' : undefined,
             color: preset.color,
             textShadow: preset.shadow,
             fontFamily: `"${preset.font}", sans-serif`,
@@ -120,7 +135,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName }
             ...(preset.textTransform ? { textTransform: preset.textTransform } : {}),
           }}
         >
-          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, animation)}
+          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, animation, preset.structure)}
         </div>
       )}
     </AbsoluteFill>
