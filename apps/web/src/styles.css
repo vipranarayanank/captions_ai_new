@@ -616,3 +616,5 @@ html, body, #root { min-height: 0; }
 .timeline-popover.emoji-popover>button{font-size:19px;padding:7px 3px}
 .timeline-popover small{font-size:9px;line-height:1.5;color:#aaa5bf;overflow-wrap:anywhere}
 .timeline-toolbar button:disabled{opacity:.35;cursor:not-allowed}
+
+.background-popover{min-width:210px}.background-popover>strong{width:100%;font-size:11px}.background-swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:100%;padding:3px 0}.background-swatches>button{width:25px;height:25px;min-width:25px;border:2px solid #ffffff40!important;border-radius:50%!important;padding:0!important}.background-swatches>button.selected{outline:2px solid #b9a5ff;outline-offset:2px}.background-popover>small{width:100%;font-size:9px;line-height:1.4;color:#aaa5bf}
