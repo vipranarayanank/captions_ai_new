@@ -113,6 +113,11 @@ export class ProjectsService {
       ...(typeof caption.animationIn === 'string' ? { animationIn: caption.animationIn } : {}),
       ...(typeof caption.animationOut === 'string' ? { animationOut: caption.animationOut } : {}),
       ...(Number.isFinite(caption.animationDurationMs) ? { animationDurationMs: caption.animationDurationMs } : {}),
+      ...(typeof caption.fontFamily === 'string' && caption.fontFamily.length <= 80 ? { fontFamily: caption.fontFamily } : {}),
+      ...(typeof caption.textColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(caption.textColor) ? { textColor: caption.textColor } : {}),
+      ...(typeof caption.activeWordColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(caption.activeWordColor) ? { activeWordColor: caption.activeWordColor } : {}),
+      ...(Number.isFinite(caption.wordsOnScreen) ? { wordsOnScreen: Math.max(0, Math.min(12, Math.round(caption.wordsOnScreen!))) } : {}),
+      ...(caption.displayMode === 'word' || caption.displayMode === 'line' ? { displayMode: caption.displayMode } : {}),
       words: (caption.words ?? []).map((word) => ({
         id: word.id || randomUUID(), text: String(word.text), startMs: Math.round(word.startMs), endMs: Math.round(word.endMs),
         ...(Number.isFinite(word.positionX) ? { positionX: word.positionX } : {}),
