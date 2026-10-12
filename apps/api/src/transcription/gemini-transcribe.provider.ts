@@ -9,6 +9,8 @@ type GeminiFile = {
   mimeType?: string;
 };
 
+type GeminiUploadResponse = GeminiFile & { file?: GeminiFile };
+
 type GeminiWordAnnotation = {
   type?: string;
   text?: string;
@@ -88,7 +90,8 @@ export class GeminiTranscribeProvider implements TranscriptionProvider {
         throw new Error(await this.getApiError(uploadResponse, 'Gemini audio upload failed'));
       }
 
-      const file = await uploadResponse.json() as GeminiFile;
+      const uploadResult = await uploadResponse.json() as GeminiUploadResponse;
+      const file = uploadResult.file ?? uploadResult;
       if (!file.uri || !file.name) {
         throw new Error('Gemini uploaded the audio but returned incomplete file metadata.');
       }
