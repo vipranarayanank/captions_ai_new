@@ -3,6 +3,9 @@ export interface Word {
   text: string;
   startMs: number;
   endMs: number;
+  positionX?: number;
+  positionY?: number;
+  color?: string;
 }
 export interface Caption {
   id: string;
@@ -10,6 +13,12 @@ export interface Caption {
   endMs: number;
   text: string;
   words: Word[];
+  templateId?: string;
+  positionX?: number;
+  positionY?: number;
+  scale?: number;
+  animationIn?: import('../templates').CaptionAnimation;
+  animationOut?: import('../templates').CaptionAnimation;
 }
 export type ProjectStatus = 'UPLOADED' | 'EXTRACTING_AUDIO' | 'TRANSCRIBING' | 'READY' | 'FAILED';
 export interface Project {
