@@ -14,10 +14,14 @@
     "db:generate": "npm run prisma:generate --workspace @captions-ai/api",
     "db:push": "npm run prisma:push --workspace @captions-ai/api",
     "test": "npm run test --workspace @captions-ai/api",
-    "format": "prettier --write \"apps/**/*.{ts,tsx,css,json,prisma}\" \"*.md\""
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css,json,prisma}\" \"*.md\"",
+    "lint": "eslint \"apps/**/*.{ts,tsx}\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "eslint": "^8.57.1",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0"
   }
 }
