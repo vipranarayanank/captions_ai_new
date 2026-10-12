@@ -119,6 +119,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [exportStatus, setExportStatus] = useState('NOT_STARTED');
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const playerRef = useRef<PlayerRef>(null);
+  const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
   const lastProjectId = useRef('');
   const project = useEditorStore((s) => s.project);
   const captions = useEditorStore((s) => s.captions);
@@ -126,6 +127,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const setProject = useEditorStore((s) => s.setProject);
   const setCaptions = useEditorStore((s) => s.setCaptions);
   const updateCaption = useEditorStore((s) => s.updateCaption);
+  const patchCaption = useEditorStore((s) => s.patchCaption);
   const selectCaption = useEditorStore((s) => s.selectCaption);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
@@ -211,6 +213,64 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     try { const updated = await patchProject(id, { title: title.trim() }); setProject({ ...updated, captions }); }
     catch (e) { setError(e instanceof Error ? e.message : 'Could not rename project.'); }
   };
+  const beginTimelineDrag = (event: React.PointerEvent<HTMLButtonElement>, caption: Caption) => {
+    event.stopPropagation();
+    const track = event.currentTarget.parentElement as HTMLElement;
+    const blockRect = event.currentTarget.getBoundingClientRect();
+    const trackRect = track.getBoundingClientRect();
+    const nearStart = event.clientX - blockRect.left < 8;
+    const nearEnd = blockRect.right - event.clientX < 8;
+    dragRef.current = {
+      id: caption.id, startX: event.clientX, startMs: caption.startMs, endMs: caption.endMs,
+      width: trackRect.width, mode: nearStart ? 'start' : nearEnd ? 'end' : 'move',
+    };
+    setCaptions(captions);
+    selectCaption(caption.id);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+  const moveTimelineDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag || !drag.width) return;
+    const delta = (event.clientX - drag.startX) / drag.width * durationMs;
+    const index = captions.findIndex((caption) => caption.id === drag.id);
+    const previousEnd = index > 0 ? captions[index - 1].endMs : 0;
+    const nextStart = index >= 0 && index < captions.length - 1 ? captions[index + 1].startMs : durationMs;
+    if (drag.mode === 'move') {
+      const length = drag.endMs - drag.startMs;
+      const startMs = Math.max(previousEnd, Math.min(nextStart - length, Math.round((drag.startMs + delta) / 10) * 10));
+      patchCaption(drag.id, { startMs, endMs: startMs + length });
+    } else if (drag.mode === 'start') {
+      const startMs = Math.max(previousEnd, Math.min(drag.endMs - 200, Math.round((drag.startMs + delta) / 10) * 10));
+      patchCaption(drag.id, { startMs });
+    } else {
+      const endMs = Math.min(nextStart, durationMs, Math.max(drag.startMs + 200, Math.round((drag.endMs + delta) / 10) * 10));
+      patchCaption(drag.id, { endMs });
+    }
+  };
+  const endTimelineDrag = () => { dragRef.current = null; };
+
+  const splitSelected = () => {
+    if (!selected || selected.text.trim().split(/\\s+/).length < 2) return;
+    const words = selected.text.trim().split(/\\s+/);
+    const splitIndex = Math.ceil(words.length / 2);
+    const splitMs = Math.max(selected.startMs + 200, Math.min(selected.endMs - 200, currentMs));
+    const at = splitMs > selected.startMs + 100 && splitMs < selected.endMs - 100
+      ? splitMs : Math.round((selected.startMs + selected.endMs) / 2);
+    const first: Caption = { ...selected, endMs: at, text: words.slice(0, splitIndex).join(' '), words: [] };
+    const second: Caption = { id: crypto.randomUUID(), startMs: at, endMs: selected.endMs, text: words.slice(splitIndex).join(' '), words: [] };
+    setCaptions(captions.flatMap((caption) => caption.id === selected.id ? [first, second] : [caption]));
+    selectCaption(second.id);
+  };
+  const mergeSelected = () => {
+    if (!selected) return;
+    const index = captions.findIndex((caption) => caption.id === selected.id);
+    if (index <= 0 || captions[index - 1].endMs > selected.startMs) return;
+    const previous = captions[index - 1];
+    const merged: Caption = { ...previous, endMs: selected.endMs, text: `${previous.text} ${selected.text}`.trim(), words: [...previous.words, ...selected.words] };
+    setCaptions(captions.flatMap((caption) => caption.id === previous.id ? [merged] : caption.id === selected.id ? [] : [caption]));
+    selectCaption(previous.id);
+  };
+
   const addCaption = () => {
     const startMs = Math.round(currentMs / 100) * 100;
     const endMs = Math.min(durationMs, startMs + 1500);
@@ -252,11 +312,11 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
       </section>
       <aside className="properties-panel">
         <div className="panel-heading"><div><span className="section-kicker">DETAILS</span><h2>Properties</h2></div></div>
-        {selected ? <><div className="property-group"><label>Caption text</label><textarea className="property-text" value={selected.text} onChange={(e) => updateCaption(selected.id, { text: e.target.value })} rows={4} /><span className="hint">Keep it short for maximum impact.</span></div><div className="property-group"><label>Timing</label><div className="property-time"><div><span>START (SEC)</span><input type="number" min="0" step=".1" value={(selected.startMs / 1000).toFixed(1)} onChange={(e) => updateCaption(selected.id, { startMs: Math.max(0, Math.round(Number(e.target.value) * 1000)) })} /></div><div><span>END (SEC)</span><input type="number" min=".2" step=".1" value={(selected.endMs / 1000).toFixed(1)} onChange={(e) => updateCaption(selected.id, { endMs: Math.max(selected.startMs + 200, Math.round(Number(e.target.value) * 1000)) })} /></div></div></div><button className="danger-button" onClick={() => removeCaption(selected.id)}>Delete caption</button></> : <div className="property-empty"><div>✦</div><strong>Select a caption</strong><p>Choose a caption to edit its text and timing.</p></div>}
+        {selected ? <><div className="property-group"><label>Caption text</label><textarea className="property-text" value={selected.text} onChange={(e) => updateCaption(selected.id, { text: e.target.value })} rows={4} /><span className="hint">Keep it short for maximum impact.</span></div><div className="property-group"><label>Timing</label><div className="property-time"><div><span>START (SEC)</span><input type="number" min="0" step=".1" value={(selected.startMs / 1000).toFixed(1)} onChange={(e) => updateCaption(selected.id, { startMs: Math.max(0, Math.round(Number(e.target.value) * 1000)) })} /></div><div><span>END (SEC)</span><input type="number" min=".2" step=".1" value={(selected.endMs / 1000).toFixed(1)} onChange={(e) => updateCaption(selected.id, { endMs: Math.max(selected.startMs + 200, Math.round(Number(e.target.value) * 1000)) })} /></div></div></div><div className="caption-actions"><button className="subtle-button" disabled={selected.text.trim().split(/\\s+/).length < 2} onClick={splitSelected}>Split caption</button><button className="subtle-button" disabled={captions.findIndex((caption) => caption.id === selected.id) <= 0 || captions[captions.findIndex((caption) => caption.id === selected.id) - 1]?.endMs > selected.startMs} onClick={mergeSelected}>Merge previous</button></div><button className="danger-button" onClick={() => removeCaption(selected.id)}>Delete caption</button></> : <div className="property-empty"><div>✦</div><strong>Select a caption</strong><p>Choose a caption to edit its text and timing.</p></div>}
         <div className="keyboard-hints"><span>KEYBOARD SHORTCUTS</span><p><kbd>Space</kbd> Play / pause</p><p><kbd>←</kbd> <kbd>→</kbd> Seek 0.5 seconds</p><p><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo</p></div>
       </aside>
     </div>
-    <section className="timeline-panel"><div className="timeline-head"><div><span className="section-kicker">TIMELINE</span><strong>Caption track</strong></div><span>{formatTime(currentMs)} <span className="timeline-divider">/</span> {formatTime(durationMs)}</span></div><div className="timeline-ruler"><span>00:00</span><span>{formatTime(durationMs / 4)}</span><span>{formatTime(durationMs / 2)}</span><span>{formatTime(durationMs * .75)}</span><span>{formatTime(durationMs)}</span></div><div className="timeline-track" onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs); }}><div className="timeline-progress" style={{ width: `${Math.min(100, currentMs / durationMs * 100)}%` }} />{captions.map((caption) => <button key={caption.id} className={`timeline-block ${selectedId === caption.id ? 'active' : ''}`} style={{ left: `${caption.startMs / durationMs * 100}%`, width: `${Math.max(.6, (caption.endMs - caption.startMs) / durationMs * 100)}%` }} title={caption.text} onClick={(e) => { e.stopPropagation(); selectCaption(caption.id); seek(caption.startMs); }}>{caption.text}</button>}<div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} /></div><div className="timeline-footer"><span>Drag the playhead to scrub · Select a block to edit</span><button className="subtle-button" onClick={addCaption}>＋ Add caption</button></div></section>
+    <section className="timeline-panel"><div className="timeline-head"><div><span className="section-kicker">TIMELINE</span><strong>Caption track</strong></div><span>{formatTime(currentMs)} <span className="timeline-divider">/</span> {formatTime(durationMs)}</span></div><div className="timeline-ruler"><span>00:00</span><span>{formatTime(durationMs / 4)}</span><span>{formatTime(durationMs / 2)}</span><span>{formatTime(durationMs * .75)}</span><span>{formatTime(durationMs)}</span></div><div className="timeline-track" onPointerMove={moveTimelineDrag} onPointerUp={endTimelineDrag} onPointerCancel={endTimelineDrag} onClick={(e) => { if (dragRef.current) return; const rect = e.currentTarget.getBoundingClientRect(); seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs); }}><div className="timeline-progress" style={{ width: `${Math.min(100, currentMs / durationMs * 100)}%` }} />{captions.map((caption) => <button key={caption.id} className={`timeline-block ${selectedId === caption.id ? 'active' : ''}`} style={{ left: `${caption.startMs / durationMs * 100}%`, width: `${Math.max(.6, (caption.endMs - caption.startMs) / durationMs * 100)}%` }} title={caption.text} onPointerDown={(e) => beginTimelineDrag(e, caption)} onClick={(e) => { e.stopPropagation(); selectCaption(caption.id); seek(caption.startMs); }}>{caption.text}</button>}<div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} /></div><div className="timeline-footer"><span>Drag the playhead to scrub · Select a block to edit</span><button className="subtle-button" onClick={addCaption}>＋ Add caption</button></div></section>
     <footer className="editor-footer"><span>CAPTIFY AI</span><span>Autosave is on · Changes save automatically</span></footer>
   </main>;
 }
