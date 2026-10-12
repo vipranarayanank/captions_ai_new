@@ -141,7 +141,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           await new Promise((resolve) => window.setTimeout(resolve, 2000));
           p = await getProject(id);
         }
-        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); }
+        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); if (p.status === 'READY') { void getExportStatus(id).then((result) => { if (alive) { setExportStatus(result.status); setDownloadUrl(result.downloadUrl); } }).catch(() => undefined); } }
       } catch (e) { if (alive) setError(e instanceof Error ? e.message : 'Could not load project.'); }
       finally { if (alive) setLoading(false); }
     };
@@ -180,9 +180,9 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   }, [exporting, id]);
 
   const requestExport = async () => {
-    setError(''); setDownloadUrl(null); setExportStatus('QUEUED');
-    try { await startExport(id); setExporting(true); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not start export.'); }
+    setError(''); setDownloadUrl(null); setExportStatus('QUEUED'); setExporting(true);
+    try { await startExport(id); }
+    catch (e) { setExporting(false); setError(e instanceof Error ? e.message : 'Could not start export.'); }
   };
 
   useEffect(() => {
