@@ -39,7 +39,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), init);
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
-    try { const body = await response.json(); message = body.message ?? message; } catch {}
+    try { const body = await response.json(); message = body.message ?? message; } catch { /* Keep the HTTP status fallback for non-JSON errors. */ }
     throw new Error(Array.isArray(message) ? message.join(', ') : message);
   }
   return response.json() as Promise<T>;
