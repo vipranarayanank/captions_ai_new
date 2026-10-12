@@ -542,3 +542,29 @@ html, body, #root { min-height: 0; }
  .caption-panel .template-card .template-thumb{min-height:90px !important}
  .caption-panel .template-card small{font-size:12px !important}
 }
+
+
+/* Compact position picker shown only on the selected template card. */
+.caption-panel .template-position-controls{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  width:100%;
+  margin-top:-2px;
+}
+.caption-panel .template-position-button{
+  appearance:none;
+  flex:1 1 0;
+  min-width:0;
+  padding:4px 3px;
+  border:0;
+  border-radius:5px;
+  background:#414149;
+  color:#c9c8d1;
+  font:600 11px/1.15 inherit;
+  cursor:pointer;
+  text-align:center;
+  text-transform:capitalize;
+}
+.caption-panel .template-position-button:hover{background:#595965;color:#fff}
+.caption-panel .template-position-button.selected{background:#8b35f5;color:#fff}
