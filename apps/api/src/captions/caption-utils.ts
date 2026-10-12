@@ -25,7 +25,7 @@ export function groupWordsIntoCaptions(words: Word[], maxWords = 6, maxDurationM
     const sentenceEnded = previous && /[.!?]["')\]]?$/.test(previous.text);
     const pause = previous ? word.startMs - previous.endMs > 700 : false;
     const tooMany = group.length >= maxWords;
-    const tooLong = previous ? word.endMs - group[0].startMs > maxDurationMs : false;
+    const tooLong = group.length ? word.endMs - group[0].startMs > maxDurationMs : false;
     if (group.length && (sentenceEnded || pause || tooMany || tooLong)) flush();
     group.push({ ...word, startMs: Math.round(word.startMs), endMs: Math.round(word.endMs) });
   }
