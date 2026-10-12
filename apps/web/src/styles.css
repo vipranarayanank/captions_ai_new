@@ -349,3 +349,40 @@ html, body, #root { min-height: 0; }
  .caption-panel{height:52vh!important;min-height:360px!important;width:100%!important}
  .timeline-panel{width:auto!important;max-width:none!important;margin:0 10px 12px!important;align-self:stretch!important}
 }
+
+/* Final approved desktop composition: compact timeline below the gallery,
+   with the video filling the complete right-hand column. */
+@media (min-width:761px){
+ .editor-shell{
+   display:grid!important;
+   grid-template-columns:minmax(0,1fr) minmax(300px,30vw)!important;
+   grid-template-rows:auto minmax(0,1fr) 190px!important;
+   column-gap:14px!important;
+   row-gap:0!important;
+   height:100dvh!important;
+   min-height:560px!important;
+   overflow:hidden!important;
+ }
+ .editor-topbar{grid-column:1 / -1!important;grid-row:1!important;min-width:0}
+ .editor-workspace{display:contents!important}
+ .caption-panel{grid-column:1!important;grid-row:2!important;min-width:0!important;min-height:0!important;height:auto!important;margin:12px 0 8px 16px!important}
+ .preview-panel{grid-column:2!important;grid-row:2 / 4!important;min-width:0!important;min-height:0!important;height:auto!important;align-self:stretch!important;margin:12px 16px 12px 0!important}
+ .player-wrap{height:100%!important;min-height:0!important;max-height:none!important;flex:1 1 auto!important}
+ .player-wrap>div{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important}
+ .player-wrap video{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important}
+ .timeline-panel{grid-column:1!important;grid-row:3!important;min-width:0!important;width:auto!important;height:176px!important;max-height:176px!important;overflow:hidden!important;margin:0 0 12px 16px!important;align-self:stretch!important}
+ .timeline-toolbar{min-height:40px!important;height:40px!important;padding:4px 8px!important;gap:5px!important}
+ .timeline-toolbar>strong{margin-right:6px!important}
+ .timeline-toolbar button{padding:6px 8px!important;font-size:10px!important}
+ .timeline-ruler{padding:4px 10px 2px!important}
+ .timeline-track{height:76px!important;margin:0 10px 4px!important}
+ .timeline-footer{padding:0 10px 4px!important}
+}
+@media(max-width:760px){
+ .editor-shell{display:flex!important;flex-direction:column!important;height:auto!important;min-height:100dvh!important;overflow:visible!important}
+ .editor-workspace{display:flex!important;flex-direction:column!important}
+ .caption-panel{margin:0!important}
+ .preview-panel{margin:0!important}
+ .timeline-panel{height:auto!important;max-height:none!important}
+ .timeline-track{height:82px!important;min-width:500px}
+}
