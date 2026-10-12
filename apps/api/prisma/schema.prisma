@@ -8,6 +8,31 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Add application models after the product requirements are defined.
-// Keep database-specific queries behind service/repository boundaries so a
-// Firebase/Firestore implementation can be added without coupling controllers.
+enum ProjectStatus {
+  UPLOADED
+  EXTRACTING_AUDIO
+  TRANSCRIBING
+  READY
+  FAILED
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  title        String
+  status       ProjectStatus @default(UPLOADED)
+  errorMessage String?
+  videoKey     String        @unique
+  audioKey     String?
+  durationSec  Float?
+  width        Int?
+  height       Int?
+  fps          Float?
+  language     String?
+  templateId   String        @default("classic")
+  captions     Json          @default("[]")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
+}
