@@ -24,6 +24,8 @@ model Project {
   videoKey      String        @unique
   fileSizeBytes Int           @default(0)
   audioKey      String?
+  exportKey     String?
+  exportStatus  String?
   durationSec   Float?
   width         Int?
   height        Int?
