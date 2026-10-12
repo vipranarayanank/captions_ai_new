@@ -6,6 +6,7 @@ export type ProjectStatus =
   | 'FAILED';
 
 export interface Word {
+  id: string;
   text: string;
   startMs: number;
   endMs: number;
@@ -18,6 +19,8 @@ export interface Caption {
   text: string;
   words: Word[];
 }
+
+export type Part = Caption;
 
 export interface ProjectDto {
   id: string;

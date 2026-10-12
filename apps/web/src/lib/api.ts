@@ -1,4 +1,5 @@
 export interface Word {
+  id: string;
   text: string;
   startMs: number;
   endMs: number;
@@ -38,7 +39,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(apiUrl(path), init);
   if (!response.ok) {
     let message = `Request failed (${response.status})`;
-    try { const body = await response.json(); message = body.message ?? message; } catch {}
+    try { const body = await response.json(); message = body.message ?? message; } catch { /* Keep the HTTP status fallback for non-JSON errors. */ }
     throw new Error(Array.isArray(message) ? message.join(', ') : message);
   }
   return response.json() as Promise<T>;
@@ -54,4 +55,3 @@ export const patchProject = (id: string, body: Partial<Pick<Project, 'title' | '
 export const saveCaptions = (id: string, captions: Caption[]) =>
   request<Project>(`/projects/${id}/captions`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ captions }) });
 export const deleteProject = (id: string) => request<{ deleted: boolean }>(`/projects/${id}`, { method: 'DELETE' });
-

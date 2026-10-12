@@ -52,7 +52,7 @@ export class ProjectsService {
       await this.queue.enqueue(project.id);
       return this.toDto(project);
     } catch (error) {
-      try { await this.storage.delete(videoKey); } catch {}
+      try { await this.storage.delete(videoKey); } catch { /* Best-effort cleanup; preserve the original upload error. */ }
       throw error;
     } finally {
       await fs.rm(file.path, { force: true });
@@ -102,7 +102,7 @@ export class ProjectsService {
       endMs: Math.round(caption.endMs),
       text: caption.text.trim(),
       words: (caption.words ?? []).map((word) => ({
-        text: String(word.text), startMs: Math.round(word.startMs), endMs: Math.round(word.endMs),
+        id: word.id || randomUUID(), text: String(word.text), startMs: Math.round(word.startMs), endMs: Math.round(word.endMs),
       })),
     }));
     const updated = await this.prisma.project.update({
@@ -116,7 +116,7 @@ export class ProjectsService {
     if (!project) throw new NotFoundException('Project not found.');
     await this.prisma.project.delete({ where: { id } });
     for (const key of [project.videoKey, project.audioKey, project.exportKey].filter(Boolean) as string[]) {
-      try { await this.storage.delete(key); } catch {}
+      try { await this.storage.delete(key); } catch { /* Best-effort cleanup of project media. */ }
     }
     return { deleted: true };
   }
