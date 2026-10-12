@@ -1,4 +1,5 @@
-import { AbsoluteFill, Video, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
+import { Video } from '@remotion/media';
 import type { Caption } from '../lib/api';
 
 export interface CaptionCompositionProps {
