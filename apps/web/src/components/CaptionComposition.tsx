@@ -3,6 +3,7 @@ import { Video } from '@remotion/media';
 import type { CSSProperties } from 'react';
 import type { Caption } from '../lib/api';
 import { CAPTION_TEMPLATES, type CaptionAnimation, type CaptionPreset } from '../templates';
+import { createTemplateSchema } from '../templateSchema';
 
 export interface CaptionCompositionProps {
   src: string;
@@ -119,14 +120,10 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
   const timeMs = frame / fps * 1000;
   const active = captions.find((caption) => timeMs >= caption.startMs && timeMs < caption.endMs);
   const preset = CAPTION_TEMPLATES.find((item) => item.id === templateId) ?? CAPTION_TEMPLATES[0];
-  const animation = transitionName ?? preset.animationIn;
-  const structure = preset.id === 'master' ? 'master'
-    : ['simple','typo-simple','word-highlight','cursive-highlight','focus','spotlight','glow-word','oneword-pill'].includes(preset.id) ? 'highlight'
-    : ['popup-chat-bubble','popup-chat-bubble-left','podcast'].includes(preset.id) ? 'chat'
-    : ['notification','mint-punch'].includes(preset.id) ? 'notification'
-    : ['triple','smooth-fusion'].includes(preset.id) ? 'three-line'
-    : preset.structure;
-  const fontSize = Math.max(12, Math.min(width, height) * preset.sizeRel);
+  const schema = createTemplateSchema(preset);
+  const animation = transitionName ?? schema.animation.enter.type;
+  const structure = schema.layout.kind;
+  const fontSize = Math.max(12, Math.min(width, height) * schema.typography.fontSizeRelative);
   const top = captionPosition === 'top' ? '8%' : captionPosition === 'middle' ? '42%' : 'auto';
   const bottom = captionPosition === 'bottom' ? '12%' : 'auto';
   const activeDuration = active ? active.endMs - active.startMs : 0;
@@ -144,7 +141,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             width: '90%',
             maxHeight: '90%',
             overflow: 'visible',
-            textAlign: preset.align,
+            textAlign: schema.layout.alignment,
             display: 'block',
             border: preset.id === 'boxed' ? '2px solid #FFFFFF' : undefined,
             borderColor: preset.id === 'boxed' ? (preset.activeWord ?? '#B7F34A') : undefined,
@@ -156,12 +153,12 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             ...(preset.id === 'sliding-highlight' || preset.id === 'dynamic-sliding-highlight' ? { background:'linear-gradient(transparent 58%, rgba(173,255,0,.75) 58%)', padding:'0 .18em' } : {}),
             color: preset.color,
             textShadow: preset.shadow,
-            fontFamily: `"${preset.font}", sans-serif`,
-            fontWeight: preset.weight,
+            fontFamily: `"${schema.typography.fontFamily}", sans-serif`,
+            fontWeight: schema.typography.fontWeight,
             fontSize,
-            lineHeight: preset.lineHeight ?? 1.08,
-            letterSpacing: preset.letterSpacing ?? '-.025em',
-            textTransform: preset.uppercase ? 'uppercase' : 'none',
+            lineHeight: schema.layout.lineHeight,
+            letterSpacing: schema.typography.letterSpacing,
+            textTransform: schema.typography.uppercase ? 'uppercase' : 'none',
             background: preset.background ?? 'transparent',
             padding: preset.background ? '0.18em 0.3em' : 0,
             borderRadius: preset.radius ?? 0,
