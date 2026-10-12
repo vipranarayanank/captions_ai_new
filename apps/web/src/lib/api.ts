@@ -54,11 +54,3 @@ export const saveCaptions = (id: string, captions: Caption[]) =>
   request<Project>(`/projects/${id}/captions`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ captions }) });
 export const deleteProject = (id: string) => request<{ deleted: boolean }>(`/projects/${id}`, { method: 'DELETE' });
 
-export interface ExportStatus {
-  status: 'NOT_STARTED' | 'QUEUED' | 'PROCESSING' | 'READY' | 'FAILED';
-  downloadUrl: string | null;
-  errorMessage: string | null;
-}
-export const startExport = (id: string) =>
-  request<{ status: string }>(`/projects/${id}/export`, { method: 'POST' });
-export const getExportStatus = (id: string) => request<ExportStatus>(`/projects/${id}/export`);
