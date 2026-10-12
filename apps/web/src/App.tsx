@@ -48,7 +48,6 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [spokenLanguage, setSpokenLanguage] = useState('en');
-  const [captionLanguage, setCaptionLanguage] = useState('en');
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -83,7 +82,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
     if (!selectedFile) { fileRef.current?.click(); return; }
     setUploading(true); setError('');
     try {
-      const project = await uploadProject(selectedFile, spokenLanguage, captionLanguage);
+      const project = await uploadProject(selectedFile, spokenLanguage);
       await refresh();
       onOpen(project.id);
     } catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.'); }
@@ -118,11 +117,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
           <select id="spoken-language" className="language-select" value={spokenLanguage} onChange={(e) => setSpokenLanguage(e.target.value)}>
             {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
           </select>
-          <label className="language-label" htmlFor="caption-language">文 <span>Caption Language</span></label>
-          <select id="caption-language" className="language-select" value={captionLanguage} onChange={(e) => setCaptionLanguage(e.target.value)}>
-            {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
-          </select>
-          <p className="language-hint">Choose the spoken language and the language you want your captions in.</p>
+          <p className="language-hint">Captions will be generated in the selected spoken language.</p>
         </div>
         <button type="button" className="primary-button upload-submit" disabled={uploading} onClick={() => void handleUpload()}>
           {uploading ? 'Uploading video…' : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
