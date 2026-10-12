@@ -28,6 +28,11 @@ export interface Caption {
   animationIn?: string;
   animationOut?: string;
   animationDurationMs?: number;
+  fontFamily?: string;
+  textColor?: string;
+  activeWordColor?: string;
+  wordsOnScreen?: number;
+  displayMode?: 'word' | 'line';
 }
 
 export type Part = Caption;
