@@ -189,10 +189,10 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
       if (['INPUT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable) return;
-      if (event.code === 'Space') { event.preventDefault(); const player = playerRef.current; if (player) player.isPlaying() ? player.pause() : player.play(); }
+      if (event.code === 'Space') { event.preventDefault(); const player = playerRef.current; if (player) { if (player.isPlaying()) player.pause(); else player.play(); } }
       if (event.key === 'ArrowLeft') playerRef.current?.seekTo(Math.max(0, Math.floor(currentMs / 1000 * 30) - 15));
       if (event.key === 'ArrowRight') playerRef.current?.seekTo(Math.floor(currentMs / 1000 * 30) + 15);
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); event.shiftKey ? redo() : undo(); }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); if (event.shiftKey) redo(); else undo(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
