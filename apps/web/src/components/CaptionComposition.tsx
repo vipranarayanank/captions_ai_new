@@ -119,6 +119,12 @@ export function CaptionComposition({ src, captions, templateId, transitionName }
   const active = captions.find((caption) => timeMs >= caption.startMs && timeMs < caption.endMs);
   const preset = CAPTION_TEMPLATES.find((item) => item.id === templateId) ?? CAPTION_TEMPLATES[0];
   const animation = transitionName ?? preset.animationIn;
+  const structure = preset.id === 'master' ? 'master'
+    : ['simple','typo-simple','word-highlight','cursive-highlight','focus','spotlight','glow-word','oneword-pill'].includes(preset.id) ? 'highlight'
+    : ['popup-chat-bubble','popup-chat-bubble-left','podcast'].includes(preset.id) ? 'chat'
+    : ['notification','mint-punch'].includes(preset.id) ? 'notification'
+    : ['triple','smooth-fusion'].includes(preset.id) ? 'three-line'
+    : preset.structure;
   const fontSize = Math.max(12, Math.min(width, height) * preset.sizeRel);
   const top = preset.position === 'top' ? '8%' : preset.position === 'middle' ? '42%' : 'auto';
   const bottom = preset.position === 'bottom' ? '12%' : 'auto';
@@ -165,7 +171,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName }
             ...(preset.textTransform ? { textTransform: preset.textTransform } : {}),
           }}
         >
-          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, animation, preset.structure)}
+          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, animation, structure)}
         </div>
       )}
     </AbsoluteFill>
