@@ -1,5 +1,7 @@
 import { Word } from '../projects/project.types';
 
+export const TRANSCRIPTION_PROVIDER = Symbol('TRANSCRIPTION_PROVIDER');
+
 export interface TranscriptionResult {
   words: Word[];
   language?: string;
