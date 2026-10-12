@@ -34,6 +34,8 @@ model Project {
   sourceLanguage String @default("en")
   captionStyle  String        @default("native")
   templateId    String        @default("classic")
+  backgroundColor String      @default("#000000")
+  backgroundOnly  Boolean     @default(false)
   captions      Json          @default("[]")
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
