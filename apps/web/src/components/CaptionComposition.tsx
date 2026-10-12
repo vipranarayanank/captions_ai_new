@@ -151,8 +151,9 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
   const activeAnimation = active?.animationIn ?? transitionName ?? schema.animation.enter.type;
   const activeExit = active?.animationOut ?? schema.animation.exit.type;
   const activeDuration = active ? active.endMs - active.startMs : 0;
-  const enterMs = Math.min(preset.durationMs || 0, activeDuration / 2);
-  const exitMs = Math.min(preset.durationMs || 0, activeDuration / 2);
+  const transitionDuration = active?.animationDurationMs ?? preset.durationMs;
+  const enterMs = Math.min(transitionDuration || 0, activeDuration / 2);
+  const exitMs = Math.min(transitionDuration || 0, activeDuration / 2);
   const enterProgress = enterMs > 0 ? progressAt(timeMs, active?.startMs ?? 0, enterMs) : 1;
   const exitProgress = exitMs > 0 && active ? progressAt(timeMs, active.endMs - exitMs, exitMs) : 0;
   const exitStyle = activeExit === 'none' || exitMs <= 0 ? {} : animationStyle(activeExit, 1 - exitProgress);
