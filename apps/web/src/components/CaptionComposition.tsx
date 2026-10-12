@@ -126,7 +126,7 @@ function renderWords(
       position: 'relative',
       left: wordInfo?.positionX != null ? wordInfo.positionX : undefined,
       top: wordInfo?.positionY != null ? wordInfo.positionY : undefined,
-      color: wordInfo?.color ?? (preset.display === 'karaoke' && isActive ? (preset.activeWord ?? '#FFD400') : preset.color),
+      color: wordInfo?.color ?? (preset.display === 'karaoke' && isActive ? (activeWordColorPlaceholder ?? preset.activeWord ?? '#FFD400') : preset.color),
       outline: editable && selectedWordId === wordInfo?.id ? '1px dashed #a855f7' : undefined,
       cursor: editable ? 'grab' : undefined,
       whiteSpace: 'pre',
@@ -146,7 +146,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
   const schema = createTemplateSchema(preset);
   const animation = transitionName ?? schema.animation.enter.type;
   const structure = schema.layout.kind;
-  const fontSize = Math.max(12, Math.min(width, height) * schema.typography.fontSizeRelative);
+  const fontSize = Math.max(12, Math.min(width, height) * schema.typography.fontSizeRelative * (active?.scale ?? 100) / 100);
   const top = active?.positionY != null ? `${active.positionY}%` : captionPosition === 'top' ? '8%' : captionPosition === 'middle' ? '42%' : 'auto';
   const bottom = active?.positionY != null ? 'auto' : captionPosition === 'bottom' ? '12%' : 'auto';
   const left = active?.positionX != null ? `${active.positionX}%` : '50%';
@@ -209,7 +209,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             ...(preset.textTransform ? { textTransform: preset.textTransform } : {}),
           }}
         >
-          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y))}
+          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y), active.displayMode ?? 'word', active.wordsOnScreen ?? 0, active.activeWordColor)}
         </div>
       )}
     </AbsoluteFill>
