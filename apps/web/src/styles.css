@@ -396,3 +396,19 @@ html, body, #root { min-height: 0; }
 .timeline-audio-playhead{position:absolute;top:0;bottom:0;width:2px;background:#a855f7;pointer-events:none;z-index:2}
 .timeline-track{margin-bottom:6px!important}
 @media(max-width:760px){.timeline-audio-track{min-width:500px}.timeline-audio-wave{gap:1px}}
+
+/* Keep both caption blocks and the audio waveform visible in the compact timeline. */
+@media (min-width:761px){
+ .timeline-panel{height:218px!important;max-height:218px!important;min-height:218px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+ .timeline-toolbar{height:38px!important;min-height:38px!important;flex:0 0 38px!important;overflow:hidden!important}
+ .timeline-ruler{height:22px!important;min-height:22px!important;flex:0 0 22px!important}
+ .timeline-track{height:66px!important;min-height:66px!important;flex:0 0 66px!important;margin:0 10px 5px!important;overflow:hidden!important}
+ .timeline-audio-track{height:34px!important;min-height:34px!important;flex:0 0 34px!important;margin:0 10px 5px!important}
+ .timeline-audio-wave{inset:0 0 0 58px!important}
+ .timeline-footer{min-height:26px!important;flex:1 1 auto!important;padding:0 10px 4px!important;overflow:hidden!important}
+}
+@media (max-width:760px){
+ .timeline-panel{display:flex!important;flex-direction:column!important}
+ .timeline-track{height:70px!important;flex:0 0 70px!important}
+ .timeline-audio-track{height:34px!important;flex:0 0 34px!important}
+}
