@@ -164,6 +164,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [styleTab, setStyleTab] = useState<'edit' | 'templates' | 'transitions'>('templates');
   const [transitionName, setTransitionName] = useState<CaptionAnimation | undefined>(undefined);
+  const [selectedWord, setSelectedWord] = useState<{ captionId: string; wordId: string } | null>(null);
   const [templatePreviewRun, setTemplatePreviewRun] = useState<{ id: string; run: number } | null>(null);
   const [wordsOnScreen, setWordsOnScreen] = useState(4);
   const [captionScale, setCaptionScale] = useState(100);
@@ -288,10 +289,28 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     return () => { video.onloadedmetadata = null; video.src = ''; };
   }, [videoSrc]);
   const seek = (ms: number) => { setCurrentMs(ms); playerRef.current?.seekTo(Math.floor(ms / 1000 * 30)); };
-  const changeTemplate = async (templateId: string) => {
+  const changeTemplate = async (templateId: string, all = applyToAll) => {
     if (!project) return;
-    try { const updated = await patchProject(id, { templateId }); setProject({ ...updated, captions }); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Could not update style.'); }
+    if (all || !selected) {
+      try {
+        const updated = await patchProject(id, { templateId });
+        const next = captions.map((caption) => ({ ...caption, templateId }));
+        setProject({ ...updated, captions: next }); setCaptions(next);
+      } catch (e) { setError(e instanceof Error ? e.message : 'Could not update style.'); }
+      return;
+    }
+    updateCaption(selected.id, { templateId });
+  };
+  const moveCaption = (captionId: string, x: number, y: number) => patchCaption(captionId, { positionX: x, positionY: y });
+  const moveWord = (captionId: string, wordId: string, x: number, y: number) => {
+    const caption = captions.find((item) => item.id === captionId);
+    if (!caption) return;
+    patchCaption(captionId, { words: caption.words.map((word) => word.id === wordId ? { ...word, positionX: x, positionY: y } : word) });
+  };
+  const setTransition = (kind: 'animationIn' | 'animationOut', value: CaptionAnimation) => {
+    if (applyToAll) setCaptions(captions.map((caption) => ({ ...caption, [kind]: value })));
+    else if (selected) updateCaption(selected.id, { [kind]: value });
+    else setTransitionName(value);
   };
   const changeCaptionPosition = (position: 'top' | 'middle' | 'bottom') => {
     setCaptionPosition(position);
@@ -391,23 +410,23 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
             <button role="tab" aria-selected={styleTab === 'transitions'} className={styleTab === 'transitions' ? 'active' : ''} onClick={() => setStyleTab('transitions')}>Transitions</button>
           </div>
           {styleTab === 'templates' ? <>
-            <div className="template-heading"><span>CAPTION TEMPLATES</span><span>{CAPTION_TEMPLATES.length} presets</span></div>
+            <div className="template-heading"><span>CAPTION TEMPLATES</span><span>{CAPTION_TEMPLATES.length} presets</span></div><div className="template-apply-row"><span>{selected ? `Selected: ${selected.text.slice(0, 28)}` : "Select a sentence first"}</span><button type="button" className={applyToAll ? "template-apply-all active" : "template-apply-all"} onClick={() => setApplyToAll(v => !v)}>{applyToAll ? "Apply to all: ON" : "Apply to all"}</button></div>
             <div className="template-grid">{CAPTION_TEMPLATES.map((item) =>
-              <button key={item.id} type="button" className={`template-card template-${item.id} ${project.templateId === item.id ? 'active' : ''} ${templatePreviewRun?.id === item.id ? 'previewing' : ''}`} onClick={() => { setTemplatePreviewRun(previous => ({ id: item.id, run: (previous?.run ?? 0) + 1 })); setTransitionName(undefined); void changeTemplate(item.id); }}>
+              <button key={item.id} type="button" className={`template-card template-${item.id} ${(selected?.templateId ?? project.templateId) === item.id ? 'active' : ''} ${templatePreviewRun?.id === item.id ? 'previewing' : ''}`} onClick={() => { setTemplatePreviewRun(previous => ({ id: item.id, run: (previous?.run ?? 0) + 1 })); setTransitionName(undefined); void changeTemplate(item.id, applyToAll); }}>
                 <span className="template-thumb" style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`,background:item.background}}>
                   <span key={`${item.id}-${templatePreviewRun?.id === item.id ? templatePreviewRun.run : 0}`} className={`template-sample-animation ${templatePreviewRun?.id === item.id ? `preview-${item.animationIn}` : ''}`}>
                     <span>THIS IS YOUR MOMENT</span><i style={{color:item.activeWord ?? item.color}}>MAKE IT COUNT</i>
                   </span>
                 </span>
                 <small>{item.name}</small>
-                {project.templateId === item.id && <div className="template-position-controls" role="group" aria-label="Caption position">
+                {(selected?.templateId ?? project.templateId) === item.id && <div className="template-position-controls" role="group" aria-label="Caption position">
                   {(['top','middle','bottom'] as const).map(position => <button key={position} type="button" className={`template-position-button ${captionPosition === position ? 'selected' : ''}`} onClick={event => { event.stopPropagation(); changeCaptionPosition(position); }}>{position === 'middle' ? 'Middle' : position === 'top' ? 'Top' : 'Bottom'}</button>)}
                 </div>}
               </button>)}</div>
           </> : styleTab === 'transitions' ? <>
-            <div className="template-heading"><span>CAPTION TRANSITIONS</span><span>Entrance effects</span></div>
+            <div className="template-heading"><span>CAPTION TRANSITIONS</span><span>{selected ? "Selected sentence" : "Select a sentence first"}</span></div><div className="transition-actions"><label>Entrance<select value={selected?.animationIn ?? transitionName ?? (CAPTION_TEMPLATES.find(t => t.id === (selected?.templateId ?? project.templateId))?.animationIn ?? "fade")} onChange={e => setTransition("animationIn", e.target.value as CaptionAnimation)}>{CAPTION_TRANSITIONS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label><label>Exit<select value={selected?.animationOut ?? "none"} onChange={e => setTransition("animationOut", e.target.value as CaptionAnimation)}>{CAPTION_TRANSITIONS.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></label></div>
             <div className="transition-grid">{CAPTION_TRANSITIONS.map((item) =>
-              <button key={item.id} className={`transition-card ${(transitionName ?? CAPTION_TEMPLATES.find(t => t.id === project.templateId)?.animationIn) === item.id ? 'active' : ''}`} onClick={() => setTransitionName(item.id)}>
+              <button key={item.id} className={`transition-card ${(transitionName ?? CAPTION_TEMPLATES.find(t => t.id === project.templateId)?.animationIn) === item.id ? 'active' : ''}`} onClick={() => setTransition('animationIn', item.id)}>
                 <span className={`transition-sample anim-${item.id}`}>Aa</span><strong>{item.name}</strong><small>{item.description}</small>
               </button>)}</div>
           </> : <div className="caption-edit-panel">
@@ -428,7 +447,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         </div>      </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">{previewDimensions.width >= previewDimensions.height ? '16:9 · HORIZONTAL' : '9:16 · VERTICAL'}</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, selectedCaptionId: selectedId, selectedWordId: selectedWord?.wordId, editable: true, onSelectCaption: (captionId: string) => { selectCaption(captionId); setSelectedWord(null); }, onSelectWord: (captionId: string, wordId: string) => { selectCaption(captionId); setSelectedWord({ captionId, wordId }); }, onMoveCaption: moveCaption, onMoveWord: moveWord }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
 
       </section>
       <aside className="properties-panel legacy-properties-panel">
@@ -479,6 +498,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
             onClick={(e) => {
               e.stopPropagation();
               selectCaption(caption.id);
+              setSelectedWord(null);
               seek(caption.startMs);
             }}
           >
