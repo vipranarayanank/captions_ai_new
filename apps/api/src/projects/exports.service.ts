@@ -15,7 +15,7 @@ export class ExportsService {
     const project = await this.prisma.project.findUnique({ where: { id: projectId } });
     if (!project) throw new NotFoundException('Project not found.');
     if (project.status !== 'READY') throw new BadRequestException('Wait until captions are ready before exporting.');
-    await this.prisma.project.update({ where: { id: projectId }, data: { exportStatus: 'QUEUED', exportKey: null } });
+    await this.prisma.project.update({ where: { id: projectId }, data: { exportStatus: 'QUEUED', exportKey: null, errorMessage: null } });
     await this.queue.enqueue(projectId);
     return { status: 'QUEUED' };
   }
