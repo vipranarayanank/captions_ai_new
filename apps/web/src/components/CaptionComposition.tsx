@@ -70,6 +70,7 @@ function renderWords(
   displayMode: 'word' | 'line' = 'word',
   wordsOnScreen = 0,
   activeWordColor?: string,
+  textColor?: string,
 ): React.ReactNode {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return null;
@@ -135,7 +136,7 @@ function renderWords(
       position: 'relative',
       left: wordInfo?.positionX != null ? wordInfo.positionX : undefined,
       top: wordInfo?.positionY != null ? wordInfo.positionY : undefined,
-      color: wordInfo?.color ?? (preset.display === 'karaoke' && isActive ? (activeWordColorPlaceholder ?? preset.activeWord ?? '#FFD400') : preset.color),
+      color: wordInfo?.color ?? (preset.display === 'karaoke' && isActive ? (activeWordColor ?? preset.activeWord ?? '#FFD400') : (textColor ?? preset.color)),
       outline: editable && selectedWordId === wordInfo?.id ? '1px dashed #a855f7' : undefined,
       cursor: editable ? 'grab' : undefined,
       whiteSpace: 'pre',
@@ -218,7 +219,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             ...(preset.textTransform ? { textTransform: preset.textTransform } : {}),
           }}
         >
-          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y), active.displayMode ?? 'word', active.wordsOnScreen ?? 0, active.activeWordColor)}
+          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y), active.displayMode ?? 'word', active.wordsOnScreen ?? 0, active.activeWordColor, active.textColor)}
         </div>
       )}
     </AbsoluteFill>
