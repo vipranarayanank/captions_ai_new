@@ -79,7 +79,8 @@ export class ProjectsService {
       update.title = title;
     }
     if (typeof data.templateId === 'string') {
-      if (!['classic', 'karaoke', 'pop', 'boxed', 'neon', 'clean', 'subtle', 'highlight-run', 'stack', 'typewriter', 'glow', 'marker', 'bounce', 'cinematic'].includes(data.templateId)) throw new BadRequestException('Unknown caption template.');
+      const allowedTemplateIds = new Set(["mrbeast-classic","solo","no-caption","master","typo-simple","podcast","discipline","kinetic","impact-glow","clean","red-wipe","punch","slam","cook","scatter","creator","creator-2","estate-1","estate","estate-2","estate-3","story","cyber","creator-3","creator-4","crazy","crazy-2","spark","gamer","cursive-highlight","popular","word-highlight","perfect","focus","open","hind","karaoke-classic","boxed","notification","mint-punch","dynamic-sliding-highlight","popup-chat-bubble","popup-chat-bubble-left","glowly-1","shine-1","fusion-1","triple","smooth","smooth-fusion","girly-sparkle","bubble-pop","spotlight","sticker","ransom","ransom-animate","torn-paper","glow-word","gilded","oneword-pill","dyn-estate","dyn-classic","dyn-creator","dyn-simple","dyn-doctor","dyn-luxe","classic","karaoke","pop","neon","subtle","highlight-run","stack","typewriter","glow","marker","bounce","cinematic"]);
+      if (!allowedTemplateIds.has(data.templateId)) throw new BadRequestException('Unknown caption template.');
       update.templateId = data.templateId;
     }
     return this.toDto(await this.prisma.project.update({ where: { id }, data: update }));
