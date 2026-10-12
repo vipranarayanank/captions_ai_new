@@ -1,4 +1,4 @@
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, Audio, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
 import { Video } from '@remotion/media';
 import type { CSSProperties } from 'react';
 import type { Caption } from '../lib/api';
@@ -11,6 +11,8 @@ export interface CaptionCompositionProps {
   templateId: string;
   transitionName?: CaptionAnimation;
   captionPosition?: 'top' | 'middle' | 'bottom';
+  backgroundColor?: string;
+  backgroundOnly?: boolean;
   selectedCaptionId?: string | null;
   selectedWordId?: string | null;
   editable?: boolean;
@@ -135,7 +137,7 @@ function renderWords(
   });
 }
 
-export function CaptionComposition({ src, captions, templateId, transitionName, captionPosition = 'middle', selectedCaptionId = null, selectedWordId = null, editable = false, onSelectCaption, onSelectWord, onMoveCaption, onMoveWord }: CaptionCompositionProps) {
+export function CaptionComposition({ src, captions, templateId, transitionName, captionPosition = 'middle', selectedCaptionId = null, selectedWordId = null, editable = false, backgroundColor = '#000000', backgroundOnly = false, onSelectCaption, onSelectWord, onMoveCaption, onMoveWord }: CaptionCompositionProps) {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const timeMs = frame / fps * 1000;
@@ -159,8 +161,8 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
   const exitStyle = activeExit === 'none' || exitMs <= 0 ? {} : animationStyle(activeExit, 1 - exitProgress);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#090a10', justifyContent: 'center', alignItems: 'center' }}>
-      <Video src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+    <AbsoluteFill style={{ backgroundColor, justifyContent: 'center', alignItems: 'center' }}>
+      {backgroundOnly ? <Audio src={src} /> : <Video src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       {active && preset.id !== 'no-caption' && (
         <div
           onClick={editable ? () => onSelectCaption?.(active.id) : undefined}
