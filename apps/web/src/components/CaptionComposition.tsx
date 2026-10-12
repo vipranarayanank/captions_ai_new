@@ -1,4 +1,4 @@
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, Easing } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate } from 'remotion';
 import { Video } from '@remotion/media';
 import type { Caption } from '../lib/api';
 import { CAPTION_TEMPLATES, type CaptionAnimation } from '../templates';
@@ -21,7 +21,7 @@ function animationStyle(name: CaptionAnimation, progress: number): React.CSSProp
 }
 export function CaptionComposition({ src, captions, templateId, transitionName }: CaptionCompositionProps) {
   const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
   const timeMs = frame / fps * 1000;
   const active = captions.find((caption) => timeMs >= caption.startMs && timeMs < caption.endMs);
   const preset = CAPTION_TEMPLATES.find((item) => item.id === templateId) ?? CAPTION_TEMPLATES[0];
