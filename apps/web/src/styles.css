@@ -21,3 +21,80 @@
 .language-hint{font-size:12px;color:#85859a;margin:2px 0 0}
 .upload-submit{width:100%;margin-top:22px;min-height:48px}.upload-submit:disabled{opacity:.65;cursor:wait}
 @media(max-width:640px){.upload-card{padding:18px;border-radius:20px}.upload-card .upload-zone{padding:18px 12px}}
+
+/* Editor viewport fit: keep the workspace inside the screen and scroll only within panels. */
+html, body, #root { min-height: 0; }
+.editor-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.editor-topbar { flex: 0 0 64px; height: 64px; }
+.editor-workspace {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 0;
+  grid-template-columns: minmax(235px, 21%) minmax(360px, 1fr) minmax(230px, 19%);
+  overflow: hidden;
+}
+.caption-panel, .preview-panel, .properties-panel {
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 16px;
+  padding-bottom: 14px;
+}
+.caption-panel { display: flex; flex-direction: column; }
+.caption-panel .panel-heading { flex: 0 0 auto; margin-bottom: 14px; }
+.caption-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; }
+.preview-panel { gap: 0; }
+.preview-header { flex: 0 0 auto; margin-bottom: 10px; }
+.player-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0 0 12px;
+  overflow: hidden;
+}
+.player-wrap > div { max-height: min(48vh, 520px) !important; }
+.template-picker { flex: 0 0 auto; max-width: 100%; padding: 10px; }
+.template-heading { margin-bottom: 8px; }
+.template-card { padding-top: 7px; padding-bottom: 6px; gap: 5px; }
+.properties-panel { overflow-y: auto; overscroll-behavior: contain; }
+.keyboard-hints { padding-top: 14px; }
+.timeline-panel { flex: 0 0 auto; padding: 12px 20px 10px; }
+.timeline-head { margin-bottom: 8px; }
+.timeline-track { height: 42px; }
+.timeline-block { top: 6px; height: 28px; }
+.timeline-footer { padding-top: 7px; }
+.editor-footer { display: none; }
+.editor-error { flex: 0 0 auto; margin: 6px 16px; }
+@media (max-height: 800px) and (min-width: 701px) {
+  .editor-topbar { flex-basis: 56px; height: 56px; }
+  .caption-panel, .preview-panel, .properties-panel { padding-top: 12px; padding-bottom: 10px; }
+  .preview-header { margin-bottom: 6px; }
+  .player-wrap { padding-bottom: 8px; }
+  .player-wrap > div { max-height: min(42vh, 390px) !important; }
+  .template-picker { padding: 7px; }
+  .template-card > span { height: 24px; }
+  .timeline-panel { padding-top: 8px; padding-bottom: 7px; }
+  .timeline-track { height: 36px; }
+  .timeline-block { top: 4px; height: 26px; }
+}
+@media (max-width: 1050px) and (min-width: 701px) {
+  .editor-workspace { grid-template-columns: minmax(210px, 26%) minmax(300px, 1fr); }
+  .properties-panel { display: none; }
+}
+@media (max-width: 700px) {
+  .editor-shell { height: auto; min-height: 100dvh; overflow: visible; }
+  .editor-topbar { flex-basis: 62px; height: 62px; }
+  .editor-workspace { display: flex; flex-direction: column; height: auto; min-height: 0; overflow: visible; }
+  .preview-panel { order: 0; min-height: 0; overflow: visible; padding: 16px 14px; }
+  .player-wrap { flex: none; min-height: 0; padding: 0 0 12px; overflow: visible; }
+  .player-wrap > div { max-height: 52vh !important; }
+  .template-picker { width: 100%; }
+  .caption-panel { order: 1; overflow: visible; border-top: 1px solid #ffffff12; border-right: 0; }
+  .caption-list { flex: none; max-height: 360px; }
+  .properties-panel { order: 2; display: block; overflow: visible; border-top: 1px solid #ffffff12; }
+  .timeline-panel { order: 3; }
+  .editor-footer { display: flex; }
+}
