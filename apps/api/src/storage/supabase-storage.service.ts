@@ -25,6 +25,7 @@ export class SupabaseStorageService implements StorageService {
   }
 
   async upload(key: string, localPath: string, contentType: string): Promise<void> {
+    const fileInfo = await fs.stat(localPath);
     const safeKey = key.split('/').map((part) => encodeURIComponent(part)).join('/');
     const response = await fetch(`${this.baseUrl}/storage/v1/object/${encodeURIComponent(this.bucket)}/${safeKey}`, {
       method: 'POST',
@@ -32,6 +33,7 @@ export class SupabaseStorageService implements StorageService {
         apikey: this.secretKey,
         Authorization: `Bearer ${this.secretKey}`,
         'Content-Type': contentType,
+        'Content-Length': String(fileInfo.size),
         'x-upsert': 'false',
       },
       body: createReadStream(localPath) as any,
