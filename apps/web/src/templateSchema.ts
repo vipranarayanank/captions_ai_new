@@ -1,4 +1,4 @@
-import type { CaptionAnimation, CaptionPreset } from './templates';
+import { CAPTION_TEMPLATES, type CaptionAnimation, type CaptionPreset } from './templates';
 
 /**
  * Normalized, JSON-serializable description used by both the preview and export renderer.
@@ -100,22 +100,22 @@ function phase(type: CaptionAnimation, durationMs: number): TemplateAnimationPha
 
 /** Converts every catalog entry into the common schema without hand-maintaining duplicate data. */
 export function createTemplateSchema(preset: CaptionPreset): CaptionTemplateSchema {
-  const layoutKind = STRUCTURE_BY_ID[preset.id] ?? (
-    preset.structure === 'scattered' || preset.structure === 'headline-script' ||
-    preset.structure === 'blended' || preset.structure === 'chat' ||
-    preset.structure === 'three-line' || preset.structure === 'highlight' ||
-    preset.structure === 'cutout' || preset.structure === 'notification'
-      ? preset.structure
-      : 'standard'
-  );
+  const supportedStructures: TemplateLayoutKind[] = [
+    'standard', 'master', 'highlight', 'chat', 'notification',
+    'three-line', 'scattered', 'cutout', 'headline-script', 'blended',
+  ];
+  const layoutKind = STRUCTURE_BY_ID[preset.id] ??
+    (supportedStructures.includes(preset.structure as TemplateLayoutKind)
+      ? preset.structure as TemplateLayoutKind
+      : 'standard');
   const mode = preset.display === 'karaoke'
     ? 'karaoke'
     : preset.display === 'wordByWord'
       ? 'word-by-word'
       : 'sentence';
-  const styles: CaptionTemplateSchema['wordStyles'] = [
-    { role: 'active', color: preset.activeWord, fontWeight: 900 },
-  ];
+  const styles: CaptionTemplateSchema['wordStyles'] = mode === 'karaoke'
+    ? [{ role: 'active', color: preset.activeWord, fontWeight: 900 }]
+    : [];
   if (layoutKind === 'master') {
     styles.push({ role: 'first', color: '#E7E7E7', fontWeight: 700, fontSizeScale: 0.62 });
     styles.push({ role: 'highlight', color: preset.activeWord ?? '#FFE600', fontWeight: 900, fontSizeScale: 1.45 });
@@ -167,4 +167,4 @@ export function createTemplateSchema(preset: CaptionPreset): CaptionTemplateSche
   };
 }
 
-export const CAPTION_TEMPLATE_SCHEMAS: CaptionTemplateSchema[] = [];
+export const CAPTION_TEMPLATE_SCHEMAS: CaptionTemplateSchema[] = CAPTION_TEMPLATES.map(createTemplateSchema);
