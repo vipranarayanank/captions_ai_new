@@ -604,3 +604,15 @@ html, body, #root { min-height: 0; }
 .timeline-word-track{height:32px;position:relative;margin:0 10px 5px 68px;overflow:hidden;border:1px solid #393342;border-radius:5px;background:#15121b}.timeline-word-label{position:absolute;left:-58px;top:0;height:100%;display:flex;align-items:center;color:#c3acd9;font-size:10px}.timeline-word-block{position:absolute;top:3px;bottom:3px;min-width:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:2px;border:1px solid #51445f;border-radius:3px;background:#292131;color:#e8def5;font-size:8px;cursor:pointer}.timeline-word-block.active{border-color:#c084fc;background:#6b21a8;color:white}@media(min-width:761px){.timeline-word-track{height:28px;min-height:28px;flex:0 0 28px}}@media(max-width:760px){.timeline-word-track{min-width:500px;height:30px;flex:0 0 30px}}
 
 .transition-duration{display:flex;flex-direction:column;gap:7px;margin:10px 0 14px;color:#aaa2b9;font-size:11px}.transition-duration strong{color:#f5efff;font-size:12px}.transition-duration input{width:100%;accent-color:#a855f7}
+
+/* Functional timeline toolbar popovers */
+.timeline-toolbar-popover{position:relative;display:inline-flex;align-items:center}
+.timeline-popover{position:absolute;z-index:20;bottom:calc(100% + 10px);left:0;min-width:190px;padding:12px;display:flex;flex-wrap:wrap;gap:7px;border:1px solid #ffffff20;border-radius:10px;background:#171724;box-shadow:0 12px 35px #0008;color:#e8e4f6}
+.timeline-popover label{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;font-size:10px;color:#c6c1d8}
+.timeline-popover input[type=color]{width:34px;height:28px;padding:2px;border:1px solid #ffffff22;border-radius:5px;background:#0c0d15}
+.timeline-popover input[type=range]{width:100%;accent-color:#a18cff}
+.timeline-popover>button{border:1px solid #ffffff18;border-radius:6px;background:#ffffff08;color:#e6e1f5;padding:6px 8px;font-size:10px}
+.timeline-popover.emoji-popover{width:190px;min-width:190px;display:grid;grid-template-columns:repeat(4,1fr)}
+.timeline-popover.emoji-popover>button{font-size:19px;padding:7px 3px}
+.timeline-popover small{font-size:9px;line-height:1.5;color:#aaa5bf;overflow-wrap:anywhere}
+.timeline-toolbar button:disabled{opacity:.35;cursor:not-allowed}
