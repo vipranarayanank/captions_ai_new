@@ -164,6 +164,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [styleTab, setStyleTab] = useState<'edit' | 'templates' | 'transitions'>('templates');
   const [transitionName, setTransitionName] = useState<CaptionAnimation | undefined>(undefined);
+  const [templatePreviewRun, setTemplatePreviewRun] = useState<{ id: string; run: number } | null>(null);
   const [wordsOnScreen, setWordsOnScreen] = useState(4);
   const [captionScale, setCaptionScale] = useState(100);
   const [captionX, setCaptionX] = useState(50);
@@ -392,9 +393,11 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           {styleTab === 'templates' ? <>
             <div className="template-heading"><span>CAPTION TEMPLATES</span><span>{CAPTION_TEMPLATES.length} presets</span></div>
             <div className="template-grid">{CAPTION_TEMPLATES.map((item) =>
-              <button key={item.id} className={`template-card template-${item.id} ${project.templateId === item.id ? 'active' : ''}`} onClick={() => { setTransitionName(undefined); void changeTemplate(item.id); }}>
-                <span className="template-thumb" style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,background:item.background,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`}}>
-                  {item.id === 'hind' ? <><span>this is</span><span>sample text</span><i>nono</i></> : item.id === 'boxed' ? <><span>this is sample</span><i>text</i></> : item.id === 'podcast' ? <><b>I'M NOT</b><b>GOING TO DO IT</b><b>BECAUSE</b><b>THERE ARE</b></> : item.id === 'master' ? <><span>this is a</span><b>choice</b></> : item.id === 'simple' ? <><b>this is</b><b>sample</b><b>text</b></> : item.id === 'sliding-highlight' ? <b>this is sample</b> : <b>{item.id === 'mrbeast-classic' ? 'THIS IS' : item.name.toUpperCase()}</b>}
+              <button key={item.id} type="button" className={`template-card template-${item.id} ${project.templateId === item.id ? 'active' : ''} ${templatePreviewRun?.id === item.id ? 'previewing' : ''}`} onClick={() => { setTemplatePreviewRun(previous => ({ id: item.id, run: (previous?.run ?? 0) + 1 })); setTransitionName(undefined); void changeTemplate(item.id); }}>
+                <span className="template-thumb" style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`,background:item.background}}>
+                  <span key={`${item.id}-${templatePreviewRun?.id === item.id ? templatePreviewRun.run : 0}`} className={`template-sample-animation preview-${item.animationIn}`}>
+                    <span>THIS IS YOUR MOMENT</span><i style={{color:item.activeWord ?? item.color}}>MAKE IT COUNT</i>
+                  </span>
                 </span>
                 <small>{item.name}</small>
                 {project.templateId === item.id && <div className="template-position-controls" role="group" aria-label="Caption position">
