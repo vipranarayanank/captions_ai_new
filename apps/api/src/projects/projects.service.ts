@@ -22,7 +22,7 @@ export class ProjectsService {
     private readonly config: ConfigService,
   ) {}
 
-  async upload(file: Express.Multer.File, languages: { sourceLanguage?: string } = {}) {
+  async upload(file: Express.Multer.File, languages: { sourceLanguage?: string; captionStyle?: string } = {}) {
     if (!file) throw new BadRequestException('Choose a video file.');
     const ext = extname(file.originalname).toLowerCase();
     const maxBytes = Number(this.config.get('MAX_UPLOAD_MB') ?? 500) * 1024 * 1024;
@@ -46,6 +46,7 @@ export class ProjectsService {
           fileSizeBytes: file.size,
           status: 'UPLOADED',
           sourceLanguage: this.normalizeLanguage(languages.sourceLanguage),
+          captionStyle: this.normalizeCaptionStyle(languages.sourceLanguage, languages.captionStyle),
         },
       });
       await this.queue.enqueue(project.id);
@@ -141,6 +142,11 @@ export class ProjectsService {
   private normalizeLanguage(value?: string) {
     const supported = new Set(['en','ta','hi','te','ml','kn','bn','mr','gu','pa','ur','es','fr','de','pt','it','ja','ko','zh','ar','id','ru','tr','vi','th']);
     return value && supported.has(value) ? value : 'en';
+  }
+
+  private normalizeCaptionStyle(language?: string, style?: string) {
+    if (language === 'ta' || language === 'hi') return style === 'roman' ? 'roman' : 'native';
+    return 'native';
   }
 
   private toDto(project: Project) {
