@@ -7,4 +7,5 @@ export interface StorageService {
   downloadToFile(key: string, destinationPath: string): Promise<void>;
   createReadStream(key: string, range?: { start: number; end?: number }): Promise<Readable>;
   delete(key: string): Promise<void>;
+  createSignedUrl(key: string, expiresInSeconds?: number): Promise<string>;
 }
