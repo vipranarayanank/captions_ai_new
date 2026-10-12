@@ -1,7 +1,8 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { promises as fs, createWriteStream } from 'node:fs';
+import { promises as fs, createWriteStream, createReadStream } from 'node:fs';
+import { dirname } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { StorageService } from './storage.types';
@@ -24,17 +25,28 @@ export class SupabaseStorageService implements StorageService {
   }
 
   async upload(key: string, localPath: string, contentType: string): Promise<void> {
-    const body = await fs.readFile(localPath);
-    const { error } = await this.client.storage.from(this.bucket).upload(key, body, {
-      contentType, upsert: false,
+    const safeKey = key.split('/').map((part) => encodeURIComponent(part)).join('/');
+    const response = await fetch(`${this.baseUrl}/storage/v1/object/${encodeURIComponent(this.bucket)}/${safeKey}`, {
+      method: 'POST',
+      headers: {
+        apikey: this.secretKey,
+        Authorization: `Bearer ${this.secretKey}`,
+        'Content-Type': contentType,
+        'x-upsert': 'false',
+      },
+      body: createReadStream(localPath) as any,
+      duplex: 'half',
     });
-    if (error) throw new InternalServerErrorException(`Storage upload failed: ${error.message}`);
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      throw new InternalServerErrorException(`Storage upload failed (HTTP ${response.status}): ${detail.slice(0, 300)}`);
+    }
   }
 
   async downloadToFile(key: string, destinationPath: string): Promise<void> {
     const response = await this.fetchObject(key);
     if (!response.ok || !response.body) throw new Error(`Storage download failed: HTTP ${response.status}`);
-    await fs.mkdir(destinationPath.slice(0, destinationPath.lastIndexOf('/')) || '.', { recursive: true });
+    await fs.mkdir(dirname(destinationPath), { recursive: true });
     await pipeline(Readable.fromWeb(response.body as import('node:stream/web').ReadableStream), createWriteStream(destinationPath));
   }
 
