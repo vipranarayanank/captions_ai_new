@@ -594,3 +594,7 @@ html, body, #root { min-height: 0; }
 @keyframes templatePreviewBounce{0%{opacity:0;transform:translateY(18px) scale(.92)}65%{opacity:1;transform:translateY(-5px) scale(1.02)}82%{transform:translateY(2px) scale(.99)}100%{opacity:1;transform:translateY(0) scale(1)}}
 @keyframes templatePreviewShake{0%{opacity:0;transform:translateX(-8px)}25%{opacity:1;transform:translateX(6px)}45%{transform:translateX(-4px)}65%{transform:translateX(2px)}100%{opacity:1;transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.template-sample-animation[class*="preview-"]{animation:none!important}}
+
+
+/* Per-sentence template and transition controls */
+.template-apply-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 12px;color:#aaa2b9;font-size:11px}.template-apply-all{border:1px solid #6b4a84;border-radius:7px;padding:7px 10px;background:#25202d;color:#e9d9ff;cursor:pointer}.template-apply-all.active{background:#7c2dc5;border-color:#b879f2;color:white}.transition-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}.transition-actions label{display:flex;flex-direction:column;gap:6px;color:#aaa2b9;font-size:11px}.transition-actions select{min-width:0;width:100%;padding:9px;border:1px solid #46414f;border-radius:7px;background:#19171f;color:#f6f2fc}
