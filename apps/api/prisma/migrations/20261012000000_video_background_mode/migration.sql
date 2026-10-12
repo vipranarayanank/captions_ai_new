@@ -1,0 +1,2 @@
+ALTER TABLE "Project" ADD COLUMN "backgroundColor" TEXT NOT NULL DEFAULT '#000000';
+ALTER TABLE "Project" ADD COLUMN "backgroundOnly" BOOLEAN NOT NULL DEFAULT false;
