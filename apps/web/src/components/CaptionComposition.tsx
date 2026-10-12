@@ -26,10 +26,13 @@ function animationStyle(name: CaptionAnimation, progress: number): CSSProperties
   const p = Math.max(0, Math.min(1, progress));
   switch (name) {
     case 'none': return {};
-    case 'fade': return { opacity: p };
-    case 'slideUp': return { opacity: p, transform: `translateY(${(1 - p) * 0.65}em)` };
+    case 'fade':
+    case 'fadeOut': return { opacity: p };
+    case 'slideUp':
+    case 'slideOut': return { opacity: p, transform: `translateY(${(1 - p) * 0.65}em)` };
     case 'slideDown': return { opacity: p, transform: `translateY(${(p - 1) * 0.65}em)` };
     case 'pop': return { opacity: p, transform: `scale(${0.65 + 0.35 * p})` };
+    case 'zoomOut': return { opacity: p, transform: `scale(${p})` };
     case 'blurIn': return { opacity: p, filter: `blur(${(1 - p) * 0.35}em)`, transform: `scale(${1.04 - 0.04 * p})` };
     case 'bounce': return { opacity: p, transform: `translateY(${Math.sin((1 - p) * Math.PI * 3) * 0.32 * (1 - p)}em)` };
     case 'shake': return { opacity: p, transform: `translateX(${Math.sin(p * Math.PI * 8) * (1 - p) * 0.12}em)` };
