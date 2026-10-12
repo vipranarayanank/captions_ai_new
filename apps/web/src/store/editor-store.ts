@@ -10,6 +10,7 @@ interface EditorState {
   setProject: (project: Project) => void;
   setCaptions: (captions: Caption[]) => void;
   updateCaption: (id: string, patch: Partial<Caption>) => void;
+  patchCaption: (id: string, patch: Partial<Caption>) => void;
   selectCaption: (id: string | null) => void;
   undo: () => void;
   redo: () => void;
@@ -25,6 +26,7 @@ export const useEditorStore = create<EditorState>((set) => ({
     history: [...state.history, copy(state.captions)].slice(-50), future: [],
     captions: state.captions.map((caption) => caption.id === id ? { ...caption, ...patch } : caption),
   })),
+  patchCaption: (id, patch) => set((state) => ({ captions: state.captions.map((caption) => caption.id === id ? { ...caption, ...patch } : caption) })),
   selectCaption: (id) => set({ selectedCaptionId: id }),
   undo: () => set((state) => {
     if (!state.history.length) return state;
