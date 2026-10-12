@@ -23,6 +23,7 @@ export interface Project {
   height: number | null;
   fps: number | null;
   language: string | null;
+  sourceLanguage: string;
   templateId: string;
   captions: Caption[];
   createdAt: string;
@@ -44,8 +45,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 export const getProjects = () => request<Project[]>('/projects');
 export const getProject = (id: string) => request<Project>(`/projects/${id}`);
-export const uploadProject = (file: File) => {
-  const body = new FormData(); body.append('video', file);
+export const uploadProject = (file: File, sourceLanguage = 'en', captionStyle = 'native') => {
+  const body = new FormData(); body.append('video', file); body.append('sourceLanguage', sourceLanguage); body.append('captionStyle', captionStyle);
   return request<Project>('/projects', { method: 'POST', body });
 };
 export const patchProject = (id: string, body: Partial<Pick<Project, 'title' | 'templateId'>>) =>
@@ -54,11 +55,3 @@ export const saveCaptions = (id: string, captions: Caption[]) =>
   request<Project>(`/projects/${id}/captions`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ captions }) });
 export const deleteProject = (id: string) => request<{ deleted: boolean }>(`/projects/${id}`, { method: 'DELETE' });
 
-export interface ExportStatus {
-  status: 'NOT_STARTED' | 'QUEUED' | 'PROCESSING' | 'READY' | 'FAILED';
-  downloadUrl: string | null;
-  errorMessage: string | null;
-}
-export const startExport = (id: string) =>
-  request<{ status: string }>(`/projects/${id}/export`, { method: 'POST' });
-export const getExportStatus = (id: string) => request<ExportStatus>(`/projects/${id}/export`);

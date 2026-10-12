@@ -19,8 +19,6 @@
     "@nestjs/core": "^10.4.15",
     "@nestjs/platform-express": "^10.4.15",
     "@prisma/client": "^6.0.1",
-    "@remotion/bundler": "^4.0.300",
-    "@remotion/renderer": "^4.0.300",
     "@supabase/supabase-js": "^2.57.4",
     "bullmq": "^5.58.5",
     "class-transformer": "^0.5.1",

@@ -31,6 +31,8 @@ model Project {
   height        Int?
   fps           Float?
   language      String?
+  sourceLanguage String @default("en")
+  captionStyle  String        @default("native")
   templateId    String        @default("classic")
   captions      Json          @default("[]")
   createdAt     DateTime      @default(now())

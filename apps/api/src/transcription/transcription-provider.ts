@@ -8,5 +8,5 @@ export interface TranscriptionResult {
 }
 
 export interface TranscriptionProvider {
-  transcribe(audioPath: string): Promise<TranscriptionResult>;
+  transcribe(audioPath: string, language?: string): Promise<TranscriptionResult>;
 }

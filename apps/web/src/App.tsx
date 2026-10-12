@@ -1,8 +1,17 @@
 import { ChangeEvent, DragEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Player, PlayerRef } from '@remotion/player';
 import { CaptionComposition } from './components/CaptionComposition';
-import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption, startExport, getExportStatus } from './lib/api';
+import { apiUrl, deleteProject, getProject, getProjects, patchProject, Project, uploadProject, saveCaptions, Caption } from './lib/api';
+import { renderMediaOnWeb } from '@remotion/web-renderer';
 import { useEditorStore } from './store/editor-store';
+
+const LANGUAGES = [
+  ['en', 'English'], ['ta', 'Tamil'], ['hi', 'Hindi'], ['te', 'Telugu'], ['ml', 'Malayalam'],
+  ['kn', 'Kannada'], ['bn', 'Bengali'], ['mr', 'Marathi'], ['gu', 'Gujarati'], ['pa', 'Punjabi'],
+  ['ur', 'Urdu'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'], ['pt', 'Portuguese'],
+  ['it', 'Italian'], ['ja', 'Japanese'], ['ko', 'Korean'], ['zh', 'Chinese'], ['ar', 'Arabic'],
+  ['id', 'Indonesian'], ['ru', 'Russian'], ['tr', 'Turkish'], ['vi', 'Vietnamese'], ['th', 'Thai'],
+] as const;
 
 const formatTime = (ms: number) => {
   const value = Math.max(0, Math.floor(ms / 1000));
@@ -37,6 +46,9 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [spokenLanguage, setSpokenLanguage] = useState('en');
+  const [captionStyle, setCaptionStyle] = useState('native');
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -59,23 +71,27 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
     return () => window.clearInterval(timer);
   }, [refresh]);
 
-  const handleFiles = async (file?: File) => {
+  const chooseFile = (file?: File) => {
     if (!file) return;
     setError('');
     if (!/^video\/(mp4|quicktime|webm|x-matroska)$/.test(file.type) && !/\.(mp4|mov|webm|mkv)$/i.test(file.name)) {
       setError('Choose an MP4, MOV, WebM, or MKV video.'); return;
     }
-    setUploading(true);
+    setSelectedFile(file);
+  };
+  const handleUpload = async () => {
+    if (!selectedFile) { fileRef.current?.click(); return; }
+    setUploading(true); setError('');
     try {
-      const project = await uploadProject(file);
+      const project = await uploadProject(selectedFile, spokenLanguage, captionStyle);
       await refresh();
       onOpen(project.id);
     } catch (e) { setError(e instanceof Error ? e.message : 'Upload failed.'); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
   };
-  const onInput = (event: ChangeEvent<HTMLInputElement>) => void handleFiles(event.target.files?.[0]);
+  const onInput = (event: ChangeEvent<HTMLInputElement>) => chooseFile(event.target.files?.[0]);
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault(); setDragging(false); void handleFiles(event.dataTransfer.files?.[0]);
+    event.preventDefault(); setDragging(false); chooseFile(event.dataTransfer.files?.[0]);
   };
 
   return <main className="app-shell">
@@ -87,15 +103,31 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
       <div className="eyebrow"><span className="sparkle">✳</span> YOUR VIDEO, REIMAGINED</div>
       <h1>Words that make<br /><span>people stop scrolling.</span></h1>
       <p>Turn videos into captivating, styled captions. Upload a clip and let the words do the talking.</p>
-      <div className={`upload-zone ${dragging ? 'dragging' : ''} ${uploading ? 'busy' : ''}`}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
-        onClick={() => !uploading && fileRef.current?.click()} role="button" tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter') fileRef.current?.click(); }}>
-        <input ref={fileRef} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv" hidden onChange={onInput} />
-        <div className="upload-icon">{uploading ? <span className="spinner" /> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" /></svg>}</div>
-        <strong>{uploading ? 'Uploading your video…' : 'Drop your video here, or browse'}</strong>
-        <span>{uploading ? 'This may take a moment' : 'MP4, MOV, WebM or MKV · up to 50 MB'}</span>
-        <button type="button" className="primary-button" disabled={uploading} onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}>{uploading ? 'Uploading' : '＋  Upload a video'}</button>
+      <div className={`upload-card ${dragging ? 'dragging' : ''} ${uploading ? 'busy' : ''}`}>
+        <div className={`upload-zone ${dragging ? 'dragging' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}
+          onClick={() => !uploading && fileRef.current?.click()} role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter') fileRef.current?.click(); }}>
+          <input ref={fileRef} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv" hidden onChange={onInput} />
+          <div className="upload-icon">{uploading ? <span className="spinner" /> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" /></svg>}</div>
+          <strong>{selectedFile ? selectedFile.name : 'Click or drag video here'}</strong>
+          <span>{selectedFile ? `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB · Ready to upload` : 'MP4, MOV, WebM or MKV · Max 500 MB'}</span>
+        </div>
+        <div className="language-fields">
+          <label className="language-label" htmlFor="spoken-language">◎ <span>Audio Spoken</span></label>
+          <select id="spoken-language" className="language-select" value={spokenLanguage} onChange={(e) => setSpokenLanguage(e.target.value)}>
+            {LANGUAGES.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+          </select>
+          {spokenLanguage !== 'en' && <><label className="language-label" htmlFor="caption-style">Aa <span>Caption Style</span></label>
+          <select id="caption-style" className="language-select" value={captionStyle} onChange={(e) => setCaptionStyle(e.target.value)}>
+            <option value="native">{spokenLanguage === 'ta' ? 'Tamil (சாப்பிட்டாச்சா?)' : spokenLanguage === 'hi' ? 'Hindi (खाना खाया?)' : 'Native script'}</option>
+            {(spokenLanguage === 'ta' || spokenLanguage === 'hi') && <option value="roman">{spokenLanguage === 'ta' ? 'Tanglish (Saptacha)' : 'Hinglish (Khana khaya)'}</option>}
+          </select></>}
+          <p className="language-hint">{spokenLanguage === 'en' ? 'English audio automatically produces English captions.' : spokenLanguage === 'ta' ? 'Choose Tamil script or Tanglish written in English letters.' : spokenLanguage === 'hi' ? 'Choose Hindi script or Hinglish written in English letters.' : 'Captions will use the selected spoken language.'}</p>
+        </div>
+        <button type="button" className="primary-button upload-submit" disabled={uploading} onClick={() => void handleUpload()}>
+          {uploading ? 'Uploading video…' : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
+        </button>
       </div>
       {error && <div className="error-banner">{error}</div>}
     </section>
@@ -125,6 +157,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [renaming, setRenaming] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('NOT_STARTED');
+  const [exportProgress, setExportProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const playerRef = useRef<PlayerRef>(null);
   const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
@@ -149,7 +182,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           await new Promise((resolve) => window.setTimeout(resolve, 5000));
           p = await getProject(id);
         }
-        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); if (p.status === 'READY') { void getExportStatus(id).then((result) => { if (alive) { setExportStatus(result.status); setDownloadUrl(result.downloadUrl); } }).catch(() => undefined); } }
+        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); }
       } catch (e) { if (alive) setError(e instanceof Error ? e.message : 'Could not load project.'); }
       finally { if (alive) setLoading(false); }
     };
@@ -168,29 +201,49 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     return () => window.clearTimeout(timer);
   }, [captions, id, project]);
 
-  useEffect(() => {
-    if (!exporting) return;
-    let alive = true;
-    const poll = async () => {
-      try {
-        const result = await getExportStatus(id);
-        if (!alive) return;
-        setExportStatus(result.status);
-        if (result.status === 'READY') { setDownloadUrl(result.downloadUrl); setExporting(false); setSaveStatus('Export ready'); }
-        else if (result.status === 'FAILED') { setExporting(false); setError(result.errorMessage || 'Export failed.'); }
-      } catch (e) {
-        if (alive) { setExporting(false); setError(e instanceof Error ? e.message : 'Could not check export status.'); }
-      }
-    };
-    void poll();
-    const timer = window.setInterval(() => void poll(), 5000);
-    return () => { alive = false; window.clearInterval(timer); };
-  }, [exporting, id]);
-
   const requestExport = async () => {
-    setError(''); setDownloadUrl(null); setExportStatus('QUEUED'); setExporting(true);
-    try { await startExport(id); }
-    catch (e) { setExporting(false); setError(e instanceof Error ? e.message : 'Could not start export.'); }
+    if (!project || !project.durationSec) {
+      setError('Video duration is unavailable. Reload the project and try again.');
+      return;
+    }
+    setError('');
+    setExporting(true);
+    setExportProgress(0);
+    setExportStatus('PROCESSING');
+    if (downloadUrl) URL.revokeObjectURL(downloadUrl);
+    setDownloadUrl(null);
+    try {
+      // Save the latest caption edits before starting the local browser render.
+      await saveCaptions(id, captions);
+      const fps = project.fps && project.fps > 0 ? Math.round(project.fps) : 30;
+      const durationInFrames = Math.max(1, Math.ceil(project.durationSec * fps));
+      const result = await renderMediaOnWeb({
+        composition: {
+          id: 'CaptionsVideo',
+          component: CaptionComposition,
+          durationInFrames,
+          fps,
+          width: project.width && project.width > 0 ? project.width : 1080,
+          height: project.height && project.height > 0 ? project.height : 1920,
+        },
+        inputProps: { src: videoSrc, captions, templateId: project.templateId },
+        container: 'mp4',
+        videoCodec: 'h264',
+        pageResponsiveness: 'medium',
+        onProgress: ({ progress }) => setExportProgress(Math.min(100, Math.floor(progress * 100))),
+      });
+      const blob = await result.getBlob();
+      const url = URL.createObjectURL(blob);
+      setDownloadUrl(url);
+      setExportStatus('READY');
+      setExportProgress(100);
+      setSaveStatus('Export ready');
+    } catch (e) {
+      setExportStatus('FAILED');
+      setError(e instanceof Error ? e.message : 'Browser video export failed. Try Chrome or a shorter video.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   useEffect(() => {
@@ -297,7 +350,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     <header className="editor-topbar">
       <button className="back-button" onClick={onBack}>← <span>Projects</span></button>
       <div className="editor-project-title">{renaming ? <input value={title} onChange={(e) => setTitle(e.target.value)} onBlur={() => void rename()} onKeyDown={(e) => e.key === 'Enter' && void rename()} autoFocus /> : <button onClick={() => setRenaming(true)} title="Rename project">{project.title} <span>✎</span></button>}<small><span className="cloud-dot" /> {saveStatus}</small></div>
-      <div className="editor-actions"><button className="icon-button" title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button className="icon-button" title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>{downloadUrl && exportStatus === 'READY' ? <a className="primary-button small" href={downloadUrl} target="_blank" rel="noreferrer">Download MP4 <span>↓</span></a> : <button className="primary-button small" disabled={exporting || project?.status !== 'READY'} onClick={() => void requestExport()}>{exporting ? 'Exporting…' : 'Export video'} <span>↗</span></button>}</div>
+      <div className="editor-actions"><button className="icon-button" title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button className="icon-button" title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>{downloadUrl && exportStatus === 'READY' ? <a className="primary-button small" href={downloadUrl} download={`${project.title || 'captify-video'}.mp4`}>Download MP4 <span>↓</span></a> : <button className="primary-button small" disabled={exporting || project?.status !== 'READY'} onClick={() => void requestExport()}>{exporting ? `Rendering ${exportProgress}%…` : 'Export video'} <span>↗</span></button>}</div>
     </header>
     {error && <div className="error-banner editor-error">{error}<button onClick={() => setError('')}>×</button></div>}
     <div className="editor-workspace">
