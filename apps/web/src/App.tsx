@@ -507,6 +507,18 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         ))}
         <div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
       </div>
+      <div className="timeline-word-track" aria-label="Individual caption words">
+        <span className="timeline-word-label">Words</span>
+        {captions.flatMap((caption) => caption.words.map((word, index) => (
+          <button key={word.id} type="button"
+            className={`timeline-word-block ${selectedWord?.wordId === word.id ? 'active' : ''}`}
+            style={{ left: `${word.startMs / durationMs * 100}%`, width: `${Math.max(.5, (word.endMs - word.startMs) / durationMs * 100)}%` }}
+            title={word.text}
+            onClick={(event) => { event.stopPropagation(); selectCaption(caption.id); setSelectedWord({ captionId: caption.id, wordId: word.id }); seek(word.startMs); }}>
+            {word.text}
+          </button>
+        )))}
+      </div>
       <div
         className="timeline-audio-track"
         role="img"
