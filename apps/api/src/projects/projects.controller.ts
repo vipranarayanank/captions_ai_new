@@ -38,7 +38,7 @@ export class ProjectsController {
   get(@Param('id') id: string) { return this.projects.get(id); }
 
   @Patch('projects/:id')
-  update(@Param('id') id: string, @Body() body: { title?: string; templateId?: string }) {
+  update(@Param('id') id: string, @Body() body: { title?: string; templateId?: string; backgroundColor?: string; backgroundOnly?: boolean }) {
     return this.projects.update(id, body);
   }
 
