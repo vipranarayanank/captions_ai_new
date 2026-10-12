@@ -101,8 +101,18 @@ export class ProjectsService {
       startMs: Math.round(caption.startMs),
       endMs: Math.round(caption.endMs),
       text: caption.text.trim(),
+      ...(typeof caption.templateId === 'string' ? { templateId: caption.templateId } : {}),
+      ...(Number.isFinite(caption.positionX) ? { positionX: caption.positionX } : {}),
+      ...(Number.isFinite(caption.positionY) ? { positionY: caption.positionY } : {}),
+      ...(Number.isFinite(caption.scale) ? { scale: caption.scale } : {}),
+      ...(typeof caption.animationIn === 'string' ? { animationIn: caption.animationIn } : {}),
+      ...(typeof caption.animationOut === 'string' ? { animationOut: caption.animationOut } : {}),
+      ...(Number.isFinite(caption.animationDurationMs) ? { animationDurationMs: caption.animationDurationMs } : {}),
       words: (caption.words ?? []).map((word) => ({
         id: word.id || randomUUID(), text: String(word.text), startMs: Math.round(word.startMs), endMs: Math.round(word.endMs),
+        ...(Number.isFinite(word.positionX) ? { positionX: word.positionX } : {}),
+        ...(Number.isFinite(word.positionY) ? { positionY: word.positionY } : {}),
+        ...(typeof word.color === 'string' ? { color: word.color } : {}),
       })),
     }));
     const updated = await this.prisma.project.update({
