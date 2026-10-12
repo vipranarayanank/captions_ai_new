@@ -32,7 +32,6 @@ model Project {
   fps           Float?
   language      String?
   sourceLanguage String @default("en")
-  captionLanguage String @default("en")
   templateId    String        @default("classic")
   captions      Json          @default("[]")
   createdAt     DateTime      @default(now())
