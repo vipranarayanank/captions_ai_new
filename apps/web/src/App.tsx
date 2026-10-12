@@ -50,7 +50,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [spokenLanguage, setSpokenLanguage] = useState('en');
   const [captionStyle, setCaptionStyle] = useState('native');
-  const [captionPosition, setCaptionPosition] = useState<'top' | 'middle' | 'bottom'>('middle');
+
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -171,6 +171,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [applyToAll, setApplyToAll] = useState(false);
   const [behindPerson, setBehindPerson] = useState(false);
   const [timelineZoom, setTimelineZoom] = useState(1);
+  const [captionPosition, setCaptionPosition] = useState<'top' | 'middle' | 'bottom'>('middle');
   const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [previewDimensions, setPreviewDimensions] = useState({ width: 1080, height: 1920 });
   const playerRef = useRef<PlayerRef>(null);
@@ -235,6 +236,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         composition: {
           id: 'CaptionsVideo',
           component: CaptionComposition,
+          defaultProps: { src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition },
           durationInFrames,
           fps,
           width: project.width && project.width > 0 ? project.width : 1080,
@@ -426,7 +428,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         </div>      </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">{previewDimensions.width >= previewDimensions.height ? '16:9 · HORIZONTAL' : '9:16 · VERTICAL'}</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame: number) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
 
       </section>
       <aside className="properties-panel legacy-properties-panel">
