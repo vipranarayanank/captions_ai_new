@@ -107,7 +107,7 @@ export class ProjectsService {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found.');
     await this.prisma.project.delete({ where: { id } });
-    for (const key of [project.videoKey, project.audioKey].filter(Boolean) as string[]) {
+    for (const key of [project.videoKey, project.audioKey, project.exportKey].filter(Boolean) as string[]) {
       try { await this.storage.delete(key); } catch {}
     }
     return { deleted: true };
