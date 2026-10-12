@@ -45,8 +45,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 export const getProjects = () => request<Project[]>('/projects');
 export const getProject = (id: string) => request<Project>(`/projects/${id}`);
-export const uploadProject = (file: File, sourceLanguage = 'en') => {
-  const body = new FormData(); body.append('video', file); body.append('sourceLanguage', sourceLanguage);
+export const uploadProject = (file: File, sourceLanguage = 'en', captionStyle = 'native') => {
+  const body = new FormData(); body.append('video', file); body.append('sourceLanguage', sourceLanguage); body.append('captionStyle', captionStyle);
   return request<Project>('/projects', { method: 'POST', body });
 };
 export const patchProject = (id: string, body: Partial<Pick<Project, 'title' | 'templateId'>>) =>
