@@ -389,8 +389,10 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
             <div className="template-heading"><span>CAPTION TEMPLATES</span><span>{CAPTION_TEMPLATES.length} presets</span></div>
             <div className="template-grid">{CAPTION_TEMPLATES.map((item) =>
               <button key={item.id} className={`template-card template-${item.id} ${project.templateId === item.id ? 'active' : ''}`} onClick={() => { setTransitionName(undefined); void changeTemplate(item.id); }}>
-                <span style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,background:item.background,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`}}>Your words</span>
-                <small>{item.name}</small><em>{item.category}</em>
+                <span className="template-thumb" style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,background:item.background,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`}}>
+                  {item.id === 'hind' ? <><span>this is</span><span>sample text</span><i>nono</i></> : item.id === 'boxed' ? <><span>this is sample</span><i>text</i></> : item.id === 'podcast' ? <><b>I'M NOT</b><b>GOING TO DO IT</b><b>BECAUSE</b><b>THERE ARE</b></> : item.id === 'master' ? <><span>this is a</span><b>choice</b></> : item.id === 'simple' ? <><b>this is</b><b>sample</b><b>text</b></> : item.id === 'sliding-highlight' ? <b>this is sample</b> : <b>{item.id === 'mrbeast-classic' ? 'THIS IS' : item.name.toUpperCase()}</b>}
+                </span>
+                <small>{item.name}</small>
               </button>)}</div>
           </> : styleTab === 'transitions' ? <>
             <div className="template-heading"><span>CAPTION TRANSITIONS</span><span>Entrance effects</span></div>
