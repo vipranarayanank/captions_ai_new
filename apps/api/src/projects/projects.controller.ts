@@ -25,8 +25,8 @@ export class ProjectsController {
     }),
     limits: { fileSize: Number(process.env.MAX_UPLOAD_MB ?? 500) * 1024 * 1024 },
   }))
-  create(@UploadedFile() file: Express.Multer.File) {
-    return this.projects.upload(file);
+  create(@UploadedFile() file: Express.Multer.File, @Body() body: { sourceLanguage?: string }) {
+    return this.projects.upload(file, body);
   }
 
   constructor(private readonly projects: ProjectsService) {}
