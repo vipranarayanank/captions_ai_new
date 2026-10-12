@@ -187,6 +187,17 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const selectCaption = useEditorStore((s) => s.selectCaption);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
+  const canUndo = useEditorStore((s) => s.history.length > 0);
+  const canRedo = useEditorStore((s) => s.future.length > 0);
+  const [timelineTool, setTimelineTool] = useState<'select' | 'text'>('select');
+  const [emojiMenuOpen, setEmojiMenuOpen] = useState(false);
+  const [backgroundMenuOpen, setBackgroundMenuOpen] = useState(false);
+  const [backgroundColor, setBackgroundColor] = useState('#090a10');
+  const [soundMenuOpen, setSoundMenuOpen] = useState(false);
+  const [soundVolume, setSoundVolume] = useState(100);
+  const [muted, setMuted] = useState(false);
+  const [timelineFile, setTimelineFile] = useState<File | null>(null);
+  const timelineFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -387,6 +398,26 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     const next = [...captions, caption].sort((a, b) => a.startMs - b.startMs);
     setCaptions(next); selectCaption(caption.id);
   };
+  const insertEmoji = (emoji: string) => {
+    if (selected) {
+      updateCaption(selected.id, { text: selected.text ? `${selected.text} ${emoji}` : emoji });
+    } else {
+      const startMs = Math.round(currentMs / 100) * 100;
+      const endMs = Math.min(durationMs, startMs + 1500);
+      if (endMs - startMs < 200) return;
+      const caption: Caption = { id: crypto.randomUUID(), startMs, endMs, text: emoji, words: [] };
+      setCaptions([...captions, caption].sort((a, b) => a.startMs - b.startMs));
+      selectCaption(caption.id);
+    }
+    setEmojiMenuOpen(false);
+  };
+  const changeSound = (volume: number, isMuted = muted) => {
+    setSoundVolume(volume);
+    setMuted(isMuted);
+    // Keep the video preview's native media element in sync when the player exposes it.
+    const media = document.querySelector('.player-wrap video, .player-wrap audio') as HTMLMediaElement | null;
+    if (media) { media.volume = volume / 100; media.muted = isMuted; }
+  };
   const removeCaption = (captionId: string) => { setCaptions(captions.filter((caption) => caption.id !== captionId)); if (selectedId === captionId) selectCaption(null); };
 
   if (loading) return <div className="editor-loading"><span className="spinner" /> Preparing your project…</div>;
@@ -456,15 +487,30 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         <div className="keyboard-hints"><span>KEYBOARD SHORTCUTS</span><p><kbd>Space</kbd> Play / pause</p><p><kbd>←</kbd> <kbd>→</kbd> Seek 0.5 seconds</p><p><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo</p></div>
       </aside>
     </div>
-    <section className="timeline-panel">
+    <section className="timeline-panel" style={{ backgroundColor }}>
       <div className="timeline-toolbar">
         <strong>Timeline</strong>
-        <button onClick={addCaption}>＋ Text</button><button onClick={()=>window.alert('Background controls will be connected later.')}>◈ Background</button><button className="timeline-tool-active">↖ Select</button>
-        <button className="timeline-play-button" onClick={()=>{if(playerRef.current){playerRef.current.isPlaying()?playerRef.current.pause():playerRef.current.play();}}}>▶</button>
-        <button className={behindPerson?'timeline-tool-active':''} onClick={()=>setBehindPerson(v=>!v)}>▱ Behind person</button><button onClick={()=>window.alert('Emoji picker will be connected later.')}>☺ Emoji</button>
-        <button disabled>⌕ Zoom</button><button disabled>⇧ Upload</button><button onClick={()=>window.alert('Sound controls will be connected later.')}>♫ Sound</button>
-        <button onClick={()=>window.alert('Undo history will be connected later.')}>↶</button><button onClick={()=>window.alert('Redo history will be connected later.')}>↷</button>
-        <span className="timeline-current-time">{formatTime(currentMs)}</span><button onClick={()=>setTimelineZoom(v=>Math.max(1,v-1))}>⌕−</button><small>{timelineZoom}x</small><button onClick={()=>setTimelineZoom(v=>Math.min(10,v+1))}>⌕＋</button>
+        <button onClick={addCaption}>＋ Text</button>
+        <div className="timeline-toolbar-popover">
+          <button aria-expanded={backgroundMenuOpen} onClick={() => { setBackgroundMenuOpen(v => !v); setEmojiMenuOpen(false); setSoundMenuOpen(false); }}>◈ Background</button>
+          {backgroundMenuOpen && <div className="timeline-popover"><label>Workspace background <input type="color" value={backgroundColor} onChange={e => setBackgroundColor(e.target.value)} /></label><button onClick={() => setBackgroundColor('#090a10')}>Reset</button></div>}
+        </div>
+        <button className={timelineTool === 'select' ? 'timeline-tool-active' : ''} onClick={() => setTimelineTool('select')}>↖ Select</button>
+        <button className="timeline-play-button" aria-label="Play or pause" onClick={()=>{if(playerRef.current){playerRef.current.isPlaying()?playerRef.current.pause():playerRef.current.play();}}}>▶</button>
+        <button className={behindPerson?'timeline-tool-active':''} onClick={()=>setBehindPerson(v=>!v)} title="Toggle behind-person mode">▱ Behind person</button>
+        <div className="timeline-toolbar-popover">
+          <button aria-expanded={emojiMenuOpen} onClick={() => { setEmojiMenuOpen(v => !v); setBackgroundMenuOpen(false); setSoundMenuOpen(false); }}>☺ Emoji</button>
+          {emojiMenuOpen && <div className="timeline-popover emoji-popover">{['🔥','✨','❤️','😂','👏','💯','🎯','🚀','😍','⚡','👇','🎉'].map(emoji => <button key={emoji} title={emoji} onClick={() => insertEmoji(emoji)}>{emoji}</button>)}</div>}
+        </div>
+        <button onClick={() => setTimelineZoom(v=>Math.max(1,v-1))} title="Zoom out">⌕−</button><small>{timelineZoom}x</small><button onClick={() => setTimelineZoom(v=>Math.min(10,v+1))} title="Zoom in">⌕＋</button>
+        <input ref={timelineFileRef} type="file" accept="audio/*,video/*" hidden onChange={e => setTimelineFile(e.target.files?.[0] ?? null)} />
+        <button onClick={() => timelineFileRef.current?.click()} title={timelineFile ? timelineFile.name : 'Import media'}>⇧ Upload</button>
+        <div className="timeline-toolbar-popover">
+          <button aria-expanded={soundMenuOpen} onClick={() => { setSoundMenuOpen(v => !v); setBackgroundMenuOpen(false); setEmojiMenuOpen(false); }}>♫ Sound</button>
+          {soundMenuOpen && <div className="timeline-popover sound-popover"><label>Preview volume <strong>{muted ? 'Muted' : `${soundVolume}%`}</strong><input type="range" min="0" max="100" value={soundVolume} onChange={e => changeSound(Number(e.target.value), false)} /></label><button onClick={() => changeSound(soundVolume, !muted)}>{muted ? 'Unmute preview' : 'Mute preview'}</button>{timelineFile && <small>Selected: {timelineFile.name}. Imported media is selected; adding it to the export timeline is not supported yet.</small>}</div>}
+        </div>
+        <button disabled={!canUndo} title="Undo (Ctrl+Z)" onClick={undo}>↶</button><button disabled={!canRedo} title="Redo (Ctrl+Shift+Z)" onClick={redo}>↷</button>
+        <span className="timeline-current-time">{formatTime(currentMs)}</span>
       </div>
       <div className="timeline-ruler">
         <span>00:00</span>
