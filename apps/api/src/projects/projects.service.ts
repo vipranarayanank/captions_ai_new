@@ -86,6 +86,11 @@ export class ProjectsService {
   async saveCaptions(id: string, captions: Caption[]) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found.');
+    if (captions.some((caption) => !caption || typeof caption.text !== 'string' ||
+      !Number.isFinite(caption.startMs) || !Number.isFinite(caption.endMs) ||
+      (caption.words !== undefined && !Array.isArray(caption.words)))) {
+      throw new BadRequestException('Each caption must include text and numeric start/end times.');
+    }
     const problem = validateCaptions(captions);
     if (problem) throw new BadRequestException(problem);
     const safe = captions.map((caption) => ({
