@@ -1,8 +1,6 @@
-import {
-  BadRequestException, Inject, Injectable, NotFoundException, OnModuleDestroy,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Prisma, Project, ProjectStatus } from '@prisma/client';
+import { Prisma, Project } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import { extname } from 'node:path';
@@ -41,7 +39,13 @@ export class ProjectsService {
     try {
       await this.storage.upload(videoKey, file.path, file.mimetype);
       const project = await this.prisma.project.create({
-        data: { id, title: file.originalname.replace(/\.[^.]+$/, '').slice(0, 120) || 'Untitled video', videoKey, status: 'UPLOADED' },
+        data: {
+          id,
+          title: file.originalname.replace(/\.[^.]+$/, '').slice(0, 120) || 'Untitled video',
+          videoKey,
+          fileSizeBytes: file.size,
+          status: 'UPLOADED',
+        },
       });
       await this.queue.enqueue(project.id);
       return this.toDto(project);
@@ -54,8 +58,7 @@ export class ProjectsService {
   }
 
   async list() {
-    const projects = await this.prisma.project.findMany({ orderBy: { updatedAt: 'desc' } });
-    return projects.map((project) => this.toDto(project));
+    return (await this.prisma.project.findMany({ orderBy: { updatedAt: 'desc' } })).map((p) => this.toDto(p));
   }
 
   async get(id: string) {
@@ -113,8 +116,20 @@ export class ProjectsService {
   async media(id: string, rangeHeader?: string) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found.');
-    const stream = await this.storage.createReadStream(project.videoKey);
-    return { stream, project };
+    const range = rangeHeader ? this.parseRange(rangeHeader, project.fileSizeBytes) : undefined;
+    const stream = await this.storage.createReadStream(project.videoKey, range);
+    return { stream, project, range };
+  }
+
+  private parseRange(header: string, size: number) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(header);
+    if (!match || size <= 0) throw new BadRequestException('Invalid byte range.');
+    const start = match[1] ? Number(match[1]) : Math.max(0, size - Number(match[2]));
+    const end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+    if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || start >= size || end < start) {
+      throw new BadRequestException('Requested byte range is not satisfiable.');
+    }
+    return { start, end };
   }
 
   private toDto(project: Project) {
