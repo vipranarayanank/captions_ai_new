@@ -14,10 +14,11 @@ export class OpenAiWhisperProvider implements TranscriptionProvider {
     this.client = new OpenAI({ apiKey });
   }
 
-  async transcribe(audioPath: string): Promise<TranscriptionResult> {
+  async transcribe(audioPath: string, language?: string): Promise<TranscriptionResult> {
     const response = await this.client.audio.transcriptions.create({
       file: createReadStream(audioPath),
       model: 'whisper-1',
+      ...(language ? { language } : {}),
       response_format: 'verbose_json',
       timestamp_granularities: ['word'],
     });
