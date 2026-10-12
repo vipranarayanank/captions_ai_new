@@ -1,0 +1,13 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Add application models after the product requirements are defined.
+// Keep database-specific queries behind service/repository boundaries so a
+// Firebase/Firestore implementation can be added without coupling controllers.
