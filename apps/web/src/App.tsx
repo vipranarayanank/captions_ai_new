@@ -316,7 +316,56 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         <div className="keyboard-hints"><span>KEYBOARD SHORTCUTS</span><p><kbd>Space</kbd> Play / pause</p><p><kbd>←</kbd> <kbd>→</kbd> Seek 0.5 seconds</p><p><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo</p></div>
       </aside>
     </div>
-    <section className="timeline-panel"><div className="timeline-head"><div><span className="section-kicker">TIMELINE</span><strong>Caption track</strong></div><span>{formatTime(currentMs)} <span className="timeline-divider">/</span> {formatTime(durationMs)}</span></div><div className="timeline-ruler"><span>00:00</span><span>{formatTime(durationMs / 4)}</span><span>{formatTime(durationMs / 2)}</span><span>{formatTime(durationMs * .75)}</span><span>{formatTime(durationMs)}</span></div><div className="timeline-track" onPointerMove={moveTimelineDrag} onPointerUp={endTimelineDrag} onPointerCancel={endTimelineDrag} onClick={(e) => { if (dragRef.current) return; const rect = e.currentTarget.getBoundingClientRect(); seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs); }}><div className="timeline-progress" style={{ width: `${Math.min(100, currentMs / durationMs * 100)}%` }} />{captions.map((caption) => <button key={caption.id} className={`timeline-block ${selectedId === caption.id ? 'active' : ''}`} style={{ left: `${caption.startMs / durationMs * 100}%`, width: `${Math.max(.6, (caption.endMs - caption.startMs) / durationMs * 100)}%` }} title={caption.text} onPointerDown={(e) => beginTimelineDrag(e, caption)} onClick={(e) => { e.stopPropagation(); selectCaption(caption.id); seek(caption.startMs); }}>{caption.text}</button>}<div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} /></div><div className="timeline-footer"><span>Drag the playhead to scrub · Select a block to edit</span><button className="subtle-button" onClick={addCaption}>＋ Add caption</button></div></section>
+    <section className="timeline-panel">
+      <div className="timeline-head">
+        <div><span className="section-kicker">TIMELINE</span><strong>Caption track</strong></div>
+        <span>{formatTime(currentMs)} <span className="timeline-divider">/</span> {formatTime(durationMs)}</span>
+      </div>
+      <div className="timeline-ruler">
+        <span>00:00</span>
+        <span>{formatTime(durationMs / 4)}</span>
+        <span>{formatTime(durationMs / 2)}</span>
+        <span>{formatTime(durationMs * .75)}</span>
+        <span>{formatTime(durationMs)}</span>
+      </div>
+      <div
+        className="timeline-track"
+        onPointerMove={moveTimelineDrag}
+        onPointerUp={endTimelineDrag}
+        onPointerCancel={endTimelineDrag}
+        onClick={(e) => {
+          if (dragRef.current) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs));
+        }}
+      >
+        <div className="timeline-progress" style={{ width: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
+        {captions.map((caption) => (
+          <button
+            key={caption.id}
+            className={`timeline-block ${selectedId === caption.id ? 'active' : ''}`}
+            style={{
+              left: `${caption.startMs / durationMs * 100}%`,
+              width: `${Math.max(.6, (caption.endMs - caption.startMs) / durationMs * 100)}%`
+            }}
+            title={caption.text}
+            onPointerDown={(e) => beginTimelineDrag(e, caption)}
+            onClick={(e) => {
+              e.stopPropagation();
+              selectCaption(caption.id);
+              seek(caption.startMs);
+            }}
+          >
+            {caption.text}
+          </button>
+        ))}
+        <div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
+      </div>
+      <div className="timeline-footer">
+        <span>Drag the playhead to scrub · Select a block to edit</span>
+        <button className="subtle-button" onClick={addCaption}>＋ Add caption</button>
+      </div>
+    </section>
     <footer className="editor-footer"><span>CAPTIFY AI</span><span>Autosave is on · Changes save automatically</span></footer>
   </main>;
 }
