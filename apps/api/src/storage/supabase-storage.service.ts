@@ -44,6 +44,12 @@ export class SupabaseStorageService implements StorageService {
     return Readable.fromWeb(response.body as import('node:stream/web').ReadableStream);
   }
 
+  async createSignedUrl(key: string, expiresInSeconds = 3600): Promise<string> {
+    const { data, error } = await this.client.storage.from(this.bucket).createSignedUrl(key, expiresInSeconds);
+    if (error || !data?.signedUrl) throw new Error(`Could not create media link: ${error?.message ?? 'empty signed URL'}`);
+    return data.signedUrl;
+  }
+
   async delete(key: string): Promise<void> {
     const { error } = await this.client.storage.from(this.bucket).remove([key]);
     if (error) throw new Error(`Storage delete failed: ${error.message}`);
