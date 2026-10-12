@@ -60,8 +60,6 @@ export class ExportsWorker implements OnModuleInit, OnModuleDestroy {
       const composition = await selectComposition({
         serveUrl, id: 'CaptionsVideo',
         inputProps,
-        // Keep preview/export frame rate consistent with the source metadata where possible.
-        puppeteerInstance: undefined,
       });
       const finalComposition = { ...composition, fps, durationInFrames };
       await renderMedia({
