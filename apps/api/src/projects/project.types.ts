@@ -10,6 +10,9 @@ export interface Word {
   text: string;
   startMs: number;
   endMs: number;
+  positionX?: number;
+  positionY?: number;
+  color?: string;
 }
 
 export interface Caption {
@@ -18,6 +21,13 @@ export interface Caption {
   endMs: number;
   text: string;
   words: Word[];
+  templateId?: string;
+  positionX?: number;
+  positionY?: number;
+  scale?: number;
+  animationIn?: string;
+  animationOut?: string;
+  animationDurationMs?: number;
 }
 
 export type Part = Caption;
