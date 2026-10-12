@@ -10,12 +10,14 @@
     "dev": "concurrently -k -n web,api -c blue,green \"npm run dev:web\" \"npm run dev:api\"",
     "dev:web": "npm run dev --workspace @captions-ai/web",
     "dev:api": "npm run start:dev --workspace @captions-ai/api",
-    "build": "npm run build --workspace @captions-ai/web && npm run build --workspace @captions-ai/api",
+    "build": "npm run db:generate && npm run build --workspace @captions-ai/web && npm run build --workspace @captions-ai/api",
     "db:generate": "npm run prisma:generate --workspace @captions-ai/api",
     "db:push": "npm run prisma:push --workspace @captions-ai/api",
-    "test": "npm run test --workspace @captions-ai/api"
+    "test": "npm run test --workspace @captions-ai/api",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css,json,prisma}\" \"*.md\""
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "prettier": "^3.6.2"
   }
 }
