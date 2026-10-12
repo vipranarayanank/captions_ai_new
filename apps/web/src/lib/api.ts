@@ -20,6 +20,11 @@ export interface Caption {
   animationIn?: import('../templates').CaptionAnimation;
   animationOut?: import('../templates').CaptionAnimation;
   animationDurationMs?: number;
+  fontFamily?: string;
+  textColor?: string;
+  activeWordColor?: string;
+  wordsOnScreen?: number;
+  displayMode?: 'word' | 'line';
 }
 export type ProjectStatus = 'UPLOADED' | 'EXTRACTING_AUDIO' | 'TRANSCRIBING' | 'READY' | 'FAILED';
 export interface Project {
@@ -36,8 +41,6 @@ export interface Project {
   language: string | null;
   sourceLanguage: string;
   templateId: string;
-  backgroundColor?: string;
-  backgroundOnly?: boolean;
   backgroundColor?: string;
   backgroundOnly?: boolean;
   captions: Caption[];
