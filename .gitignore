@@ -4,6 +4,8 @@ dist
 **/dist
 build
 coverage
+.tmp/
+**/.tmp/
 .env
 .env.*
 !.env.example
