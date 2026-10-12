@@ -11,6 +11,13 @@ export interface CaptionCompositionProps {
   templateId: string;
   transitionName?: CaptionAnimation;
   captionPosition?: 'top' | 'middle' | 'bottom';
+  selectedCaptionId?: string | null;
+  selectedWordId?: string | null;
+  editable?: boolean;
+  onSelectCaption?: (id: string) => void;
+  onSelectWord?: (captionId: string, wordId: string) => void;
+  onMoveCaption?: (id: string, x: number, y: number) => void;
+  onMoveWord?: (captionId: string, wordId: string, x: number, y: number) => void;
 }
 
 const clamp = { extrapolateLeft: 'clamp' as const, extrapolateRight: 'clamp' as const };
@@ -50,6 +57,11 @@ function renderWords(
   preset: CaptionPreset,
   animation: CaptionAnimation,
   structure: string,
+  wordData?: Caption['words'],
+  selectedWordId?: string | null,
+  editable = false,
+  onSelectWord?: (wordId: string) => void,
+  onMoveWord?: (wordId: string, x: number, y: number) => void,
 ): React.ReactNode {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return null;
@@ -103,29 +115,42 @@ function renderWords(
     if (!revealed) return null;
     const progress = wordProgress(timeMs, startMs, endMs, index, words.length, preset);
     const isActive = index === activeIndex;
+    const wordInfo = wordData?.[index];
     const style: CSSProperties = {
       display: 'inline-block',
+      position: 'relative',
+      left: wordInfo?.positionX != null ? wordInfo.positionX : undefined,
+      top: wordInfo?.positionY != null ? wordInfo.positionY : undefined,
+      color: wordInfo?.color ?? (preset.display === 'karaoke' && isActive ? (preset.activeWord ?? '#FFD400') : preset.color),
+      outline: editable && selectedWordId === wordInfo?.id ? '1px dashed #a855f7' : undefined,
+      cursor: editable ? 'grab' : undefined,
       whiteSpace: 'pre',
-      color: preset.display === 'karaoke' && isActive ? (preset.activeWord ?? '#FFD400') : preset.color,
       ...animationStyle(animation, progress),
       ...(preset.wordShadow ? { textShadow: preset.wordShadow } : {}),
     };
-    return <span key={`${index}-${word}`} style={style}>{word}{index < words.length - 1 ? ' ' : ''}</span>;
+    return <span data-caption-word key={wordInfo?.id ?? `${index}-${word}`} style={style} onPointerDown={editable && wordInfo ? (event) => { event.stopPropagation(); event.preventDefault(); onSelectWord?.(wordInfo.id); const startX = event.clientX, startY = event.clientY; const initialX = wordInfo.positionX ?? 0, initialY = wordInfo.positionY ?? 0; const move = (moveEvent: PointerEvent) => onMoveWord?.(wordInfo.id, initialX + moveEvent.clientX - startX, initialY + moveEvent.clientY - startY); const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }; window.addEventListener('pointermove', move); window.addEventListener('pointerup', up, { once: true }); } : undefined}>{word}{index < words.length - 1 ? ' ' : ''}</span>;
   });
 }
 
-export function CaptionComposition({ src, captions, templateId, transitionName, captionPosition = 'middle' }: CaptionCompositionProps) {
+export function CaptionComposition({ src, captions, templateId, transitionName, captionPosition = 'middle', selectedCaptionId = null, selectedWordId = null, editable = false, onSelectCaption, onSelectWord, onMoveCaption, onMoveWord }: CaptionCompositionProps) {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
   const timeMs = frame / fps * 1000;
   const active = captions.find((caption) => timeMs >= caption.startMs && timeMs < caption.endMs);
-  const preset = CAPTION_TEMPLATES.find((item) => item.id === templateId) ?? CAPTION_TEMPLATES[0];
+  const preset = CAPTION_TEMPLATES.find((item) => item.id === (active?.templateId ?? templateId)) ?? CAPTION_TEMPLATES[0];
   const schema = createTemplateSchema(preset);
   const animation = transitionName ?? schema.animation.enter.type;
   const structure = schema.layout.kind;
   const fontSize = Math.max(12, Math.min(width, height) * schema.typography.fontSizeRelative);
-  const top = captionPosition === 'top' ? '8%' : captionPosition === 'middle' ? '42%' : 'auto';
-  const bottom = captionPosition === 'bottom' ? '12%' : 'auto';
+  const top = active?.positionY != null ? `${active.positionY}%` : captionPosition === 'top' ? '8%' : captionPosition === 'middle' ? '42%' : 'auto';
+  const bottom = active?.positionY != null ? 'auto' : captionPosition === 'bottom' ? '12%' : 'auto';
+  const left = active?.positionX != null ? `${active.positionX}%` : '5%';
+  const activeAnimation = active?.animationIn ?? transitionName ?? schema.animation.enter.type;
+  const activeExit = active?.animationOut ?? schema.animation.exit.type;
+  const enterMs = Math.min(preset.durationMs || 0, activeDuration / 2);
+  const exitMs = Math.min(preset.durationMs || 0, activeDuration / 2);
+  const enterProgress = enterMs > 0 ? progressAt(timeMs, active?.startMs ?? 0, enterMs) : 1;
+  const exitProgress = exitMs > 0 && active ? progressAt(timeMs, active.endMs - exitMs, exitMs) : 0;
   const activeDuration = active ? active.endMs - active.startMs : 0;
 
   return (
@@ -133,20 +158,26 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
       <Video src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
       {active && preset.id !== 'no-caption' && (
         <div
+          onClick={editable ? () => onSelectCaption?.(active.id) : undefined}
+          onPointerDown={editable ? (event) => { if ((event.target as HTMLElement).closest('[data-caption-word]')) return; event.preventDefault(); onSelectCaption?.(active.id); const startX = event.clientX, startY = event.clientY; const initialX = active.positionX ?? (captionPosition === 'bottom' ? 50 : 50); const initialY = active.positionY ?? (captionPosition === 'top' ? 8 : captionPosition === 'middle' ? 42 : 78); const parent = (event.currentTarget as HTMLElement).parentElement; if (!parent) return; const rect = parent.getBoundingClientRect(); const move = (moveEvent: PointerEvent) => onMoveCaption?.(active.id, Math.max(0, Math.min(100, initialX + (moveEvent.clientX - startX) / rect.width * 100)), Math.max(0, Math.min(100, initialY + (moveEvent.clientY - startY) / rect.height * 100))); const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); }; window.addEventListener('pointermove', move); window.addEventListener('pointerup', up, { once: true }); } : undefined}
           style={{
             position: 'absolute',
             top,
             bottom,
-            left: '5%',
+            left,
             width: '90%',
             maxHeight: '90%',
             overflow: 'visible',
             textAlign: schema.layout.alignment,
             display: 'block',
-            border: preset.id === 'boxed' ? '2px solid #FFFFFF' : undefined,
+            border: editable && selectedCaptionId === active.id ? '1px dashed #a855f7' : preset.id === 'boxed' ? '2px solid #FFFFFF' : undefined,
+            cursor: editable ? 'grab' : 'default',
+            touchAction: editable ? 'none' : 'auto',
+            userSelect: editable ? 'none' : 'auto',
             borderColor: preset.id === 'boxed' ? (preset.activeWord ?? '#B7F34A') : undefined,
             boxShadow: preset.structure === 'chat' ? '0 8px 24px rgba(0,0,0,.25)' : undefined,
-            transform: preset.structure === 'chat' ? 'scale(1.02)' : undefined,
+            transform: `translateX(${active?.positionX != null ? '-50%' : '0'}) ${animationStyle(activeAnimation, enterProgress).transform ?? (preset.structure === 'chat' ? 'scale(1.02)' : '')}`,
+            opacity: activeExit === 'none' || exitMs <= 0 ? (animationStyle(activeAnimation, enterProgress).opacity ?? 1) : 1 - exitProgress,
             ...(preset.id === 'podcast' ? { textAlign:'left' as const, textTransform:'uppercase' as const, fontWeight:900, letterSpacing:'-.035em', maxWidth:'74%', left:'13%' } : {}),
             ...(preset.id === 'hind' ? { textShadow:'0 0 8px rgba(0,210,255,.5)', fontFamily:'Georgia, serif' } : {}),
             ...(preset.id === 'boxed' ? { padding:'0.32em 0.42em', borderRadius:'.12em' } : {}),
@@ -169,7 +200,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             ...(preset.textTransform ? { textTransform: preset.textTransform } : {}),
           }}
         >
-          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, animation, structure)}
+          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y))}
         </div>
       )}
     </AbsoluteFill>
