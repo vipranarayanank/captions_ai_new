@@ -97,7 +97,7 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
       const allWords: Word[] = [];
       let language: string | undefined;
       for (const part of transcriptionFiles) {
-        const result = await this.whisper.transcribe(part.path);
+        const result = await this.whisper.transcribe(part.path, project.sourceLanguage);
         language = language ?? result.language;
         allWords.push(...result.words.map((word) => ({
           ...word, startMs: word.startMs + part.offsetMs, endMs: word.endMs + part.offsetMs,
