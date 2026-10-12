@@ -131,7 +131,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
   return (
     <AbsoluteFill style={{ backgroundColor: '#090a10', justifyContent: 'center', alignItems: 'center' }}>
       <Video src={src} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-      {active && (
+      {active && preset.id !== 'no-caption' && (
         <div
           style={{
             position: 'absolute',
