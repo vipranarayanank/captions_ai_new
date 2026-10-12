@@ -1,4 +1,4 @@
-export type CaptionAnimation = 'none' | 'fade' | 'slideUp' | 'slideDown' | 'pop' | 'blurIn' | 'typewriter' | 'bounce' | 'shake';
+export type CaptionAnimation = 'none' | 'fade' | 'slideUp' | 'slideDown' | 'pop' | 'blurIn' | 'typewriter' | 'bounce' | 'shake' | 'fadeOut' | 'slideOut' | 'zoomOut';
 export type CaptionPreset = {
  id:string; name:string; category:'minimal'|'bold'|'playful'|'cinematic'; font:string; weight:number; sizeRel:number;
  color:string; activeWord?:string; background?:string; shadow?:string; position:'top'|'middle'|'bottom'; align:'center'|'left'; uppercase?:boolean; letterSpacing?:string;
@@ -1407,5 +1407,5 @@ const definitions = [
 ] as CaptionPreset[];
 export const CAPTION_TEMPLATES: CaptionPreset[] = definitions;
 export const CAPTION_TRANSITIONS: {id:CaptionAnimation;name:string;description:string}[] = [
-{id:'none',name:'Instant',description:'Caption appears immediately'},{id:'fade',name:'Fade',description:'Soft fade-in'},{id:'slideUp',name:'Slide Up',description:'Moves up into place'},{id:'slideDown',name:'Slide Down',description:'Drops down into place'},{id:'pop',name:'Pop',description:'Scales up with a punch'},{id:'blurIn',name:'Blur In',description:'Sharpens into focus'},{id:'typewriter',name:'Typewriter',description:'Reveals text over time'},{id:'bounce',name:'Bounce',description:'Bouncy entrance'},{id:'shake',name:'Shake',description:'Quick energetic jitter'}
+{id:'none',name:'Instant',description:'Caption appears immediately'},{id:'fade',name:'Fade',description:'Soft fade-in'},{id:'slideUp',name:'Slide Up',description:'Moves up into place'},{id:'slideDown',name:'Slide Down',description:'Drops down into place'},{id:'pop',name:'Pop',description:'Scales up with a punch'},{id:'blurIn',name:'Blur In',description:'Sharpens into focus'},{id:'typewriter',name:'Typewriter',description:'Reveals text over time'},{id:'bounce',name:'Bounce',description:'Bouncy entrance'},{id:'shake',name:'Shake',description:'Quick energetic jitter'},{id:'fadeOut',name:'Fade Out',description:'Caption fades away'},{id:'slideOut',name:'Slide Out',description:'Caption slides away'},{id:'zoomOut',name:'Zoom Out',description:'Caption shrinks away'}
 ];
