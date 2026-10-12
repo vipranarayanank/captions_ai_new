@@ -395,7 +395,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
             <div className="template-grid">{CAPTION_TEMPLATES.map((item) =>
               <button key={item.id} type="button" className={`template-card template-${item.id} ${project.templateId === item.id ? 'active' : ''} ${templatePreviewRun?.id === item.id ? 'previewing' : ''}`} onClick={() => { setTemplatePreviewRun(previous => ({ id: item.id, run: (previous?.run ?? 0) + 1 })); setTransitionName(undefined); void changeTemplate(item.id); }}>
                 <span className="template-thumb" style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`,background:item.background}}>
-                  <span key={`${item.id}-${templatePreviewRun?.id === item.id ? templatePreviewRun.run : 0}`} className={`template-sample-animation preview-${item.animationIn}`}>
+                  <span key={`${item.id}-${templatePreviewRun?.id === item.id ? templatePreviewRun.run : 0}`} className={`template-sample-animation ${templatePreviewRun?.id === item.id ? `preview-${item.animationIn}` : ''}`}>
                     <span>THIS IS YOUR MOMENT</span><i style={{color:item.activeWord ?? item.color}}>MAKE IT COUNT</i>
                   </span>
                 </span>
