@@ -69,7 +69,7 @@ export class ProjectsService {
     return this.toDto(project);
   }
 
-  async update(id: string, data: { title?: string; templateId?: string }) {
+  async update(id: string, data: { title?: string; templateId?: string; backgroundColor?: string; backgroundOnly?: boolean }) {
     const project = await this.prisma.project.findUnique({ where: { id } });
     if (!project) throw new NotFoundException('Project not found.');
     const update: Prisma.ProjectUpdateInput = {};
@@ -78,6 +78,11 @@ export class ProjectsService {
       if (!title || title.length > 120) throw new BadRequestException('Title must be between 1 and 120 characters.');
       update.title = title;
     }
+    if (typeof data.backgroundColor === 'string') {
+      if (!/^#[0-9a-fA-F]{6}$/.test(data.backgroundColor)) throw new BadRequestException('Background color must be a hex color.');
+      update.backgroundColor = data.backgroundColor;
+    }
+    if (typeof data.backgroundOnly === 'boolean') update.backgroundOnly = data.backgroundOnly;
     if (typeof data.templateId === 'string') {
       const allowedTemplateIds = new Set(["mrbeast-classic","solo","no-caption","master","typo-simple","podcast","discipline","kinetic","impact-glow","clean","red-wipe","punch","slam","cook","scatter","creator","creator-2","estate-1","estate","estate-2","estate-3","story","cyber","creator-3","creator-4","crazy","crazy-2","spark","gamer","cursive-highlight","popular","word-highlight","perfect","focus","open","hind","karaoke-classic","boxed","notification","mint-punch","dynamic-sliding-highlight","popup-chat-bubble","popup-chat-bubble-left","glowly-1","shine-1","fusion-1","triple","smooth","smooth-fusion","girly-sparkle","bubble-pop","spotlight","sticker","ransom","ransom-animate","torn-paper","glow-word","gilded","oneword-pill","dyn-estate","dyn-classic","dyn-creator","dyn-simple","dyn-doctor","dyn-luxe","classic","karaoke","pop","neon","subtle","highlight-run","stack","typewriter","glow","marker","bounce","cinematic"]);
       if (!allowedTemplateIds.has(data.templateId)) throw new BadRequestException('Unknown caption template.');
