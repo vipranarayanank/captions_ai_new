@@ -24,7 +24,6 @@ export interface Project {
   fps: number | null;
   language: string | null;
   sourceLanguage: string;
-  captionLanguage: string;
   templateId: string;
   captions: Caption[];
   createdAt: string;
@@ -46,8 +45,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 export const getProjects = () => request<Project[]>('/projects');
 export const getProject = (id: string) => request<Project>(`/projects/${id}`);
-export const uploadProject = (file: File, sourceLanguage = 'en', captionLanguage = 'en') => {
-  const body = new FormData(); body.append('video', file); body.append('sourceLanguage', sourceLanguage); body.append('captionLanguage', captionLanguage);
+export const uploadProject = (file: File, sourceLanguage = 'en') => {
+  const body = new FormData(); body.append('video', file); body.append('sourceLanguage', sourceLanguage);
   return request<Project>('/projects', { method: 'POST', body });
 };
 export const patchProject = (id: string, body: Partial<Pick<Project, 'title' | 'templateId'>>) =>
