@@ -386,3 +386,13 @@ html, body, #root { min-height: 0; }
  .timeline-panel{height:auto!important;max-height:none!important}
  .timeline-track{height:82px!important;min-width:500px}
 }
+
+/* Audio waveform lane beneath caption blocks. Shares the same timeline time scale. */
+.timeline-audio-track{height:42px;position:relative;display:flex;align-items:center;gap:10px;margin:0 10px 6px;overflow:hidden;border:1px solid #45414f;border-radius:6px;background:#101015;cursor:pointer;isolation:isolate}
+.timeline-audio-label{position:sticky;left:0;z-index:3;flex:0 0 58px;height:100%;display:flex;align-items:center;padding:0 8px;background:#19171f;border-right:1px solid #393242;color:#b8a0d5;font-size:10px}
+.timeline-audio-wave{position:absolute;inset:0 0 0 58px;display:flex;align-items:center;justify-content:space-around;gap:2px;overflow:hidden;padding:0 4px;pointer-events:none}
+.timeline-audio-wave i{display:block;flex:1 1 2px;min-width:1px;max-width:3px;border-radius:2px;background:#8052b9;opacity:.86}
+.timeline-audio-progress{position:absolute;inset:0 auto 0 0;max-width:100%;background:#8c4fe0;opacity:.09;pointer-events:none}
+.timeline-audio-playhead{position:absolute;top:0;bottom:0;width:2px;background:#a855f7;pointer-events:none;z-index:2}
+.timeline-track{margin-bottom:6px!important}
+@media(max-width:760px){.timeline-audio-track{min-width:500px}.timeline-audio-wave{gap:1px}}
