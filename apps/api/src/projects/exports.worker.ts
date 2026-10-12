@@ -48,7 +48,7 @@ export class ExportsWorker implements OnModuleInit, OnModuleDestroy {
       const src = await this.storage.createSignedUrl(project.videoKey, 3600);
       if (!bundlePromise) {
         bundlePromise = bundle({
-          entryPoint: join(process.cwd(), '..', 'web', 'src', 'remotion-entry.tsx'),
+          entryPoint: join(__dirname, '..', '..', '..', 'web', 'src', 'remotion-entry.tsx'),
           outDir: join(process.cwd(), '.tmp', 'remotion-bundle'),
         });
       }
