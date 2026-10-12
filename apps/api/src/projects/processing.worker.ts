@@ -6,6 +6,7 @@ import { PrismaService } from '../database/prisma.service';
 import { SupabaseStorageService } from '../storage/supabase-storage.service';
 import { TRANSCRIPTION_PROVIDER, TranscriptionProvider } from '../transcription/transcription-provider';
 import { groupWordsIntoCaptions } from '../captions/caption-utils';
+import { Word } from './project.types';
 import { PROJECT_QUEUE } from './projects.queue';
 import { promises as fs } from 'node:fs';
 import { join, extname } from 'node:path';
@@ -93,7 +94,7 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
           transcriptionFiles.push({ path: partPath, offsetMs: index * 600_000 });
         }
       }
-      const allWords = [];
+      const allWords: Word[] = [];
       let language: string | undefined;
       for (const part of transcriptionFiles) {
         const result = await this.whisper.transcribe(part.path);
