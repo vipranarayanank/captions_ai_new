@@ -86,7 +86,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
         <input ref={fileRef} type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska,.mkv" hidden onChange={onInput} />
         <div className="upload-icon">{uploading ? <span className="spinner" /> : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15.5v3A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-3" /></svg>}</div>
         <strong>{uploading ? 'Uploading your video…' : 'Drop your video here, or browse'}</strong>
-        <span>{uploading ? 'This may take a moment' : 'MP4, MOV, WebM or MKV · up to 500 MB'}</span>
+        <span>{uploading ? 'This may take a moment' : 'MP4, MOV, WebM or MKV · up to 50 MB'}</span>
         <button type="button" className="primary-button" disabled={uploading} onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}>{uploading ? 'Uploading' : '＋  Upload a video'}</button>
       </div>
       {error && <div className="error-banner">{error}</div>}

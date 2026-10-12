@@ -14,7 +14,7 @@ AI-assisted video caption editor built with React + TypeScript + Vite, NestJS, P
 1. Run `npm install` at the repository root.
 2. Copy `apps/api/.env.example` to `apps/api/.env`.
 3. Set `DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and `OPENAI_API_KEY`.
-4. In Supabase Storage, create a **private** bucket named `captions-media` (or set `SUPABASE_STORAGE_BUCKET` to your bucket name). Set the bucket/project upload limit to at least `MAX_UPLOAD_MB` (500 MB by default).
+4. In Supabase Storage, create a **private** bucket named `captions-media` (or set `SUPABASE_STORAGE_BUCKET` to your bucket name). Set the bucket/project upload limit to at least `MAX_UPLOAD_MB` (50 MB by default).
 5. Start Redis with `docker compose up -d redis`.
 6. Generate Prisma Client and sync the schema: `npm run db:generate`, then `npm run db:push`.
 7. Start the app with `npm run dev`.
