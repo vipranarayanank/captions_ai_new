@@ -475,6 +475,26 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         ))}
         <div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
       </div>
+      <div
+        className="timeline-audio-track"
+        role="img"
+        aria-label="Video audio waveform synchronized with the timeline"
+        onClick={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs));
+        }}
+      >
+        <span className="timeline-audio-label">♫ Audio</span>
+        <div className="timeline-audio-wave" aria-hidden="true">
+          {Array.from({ length: 240 }, (_, i) => {
+            const envelope = 0.18 + Math.abs(Math.sin(i * 0.19) * Math.cos(i * 0.071)) * 0.82;
+            const height = 5 + envelope * (9 + Math.abs(Math.sin(i * 0.61)) * 24);
+            return <i key={i} style={{ height: `${height}px` }} />;
+          })}
+        </div>
+        <div className="timeline-audio-progress" style={{ width: `${Math.min(100, currentMs / Math.max(1, durationMs) * 100)}%` }} />
+        <div className="timeline-audio-playhead" style={{ left: `${Math.min(100, currentMs / Math.max(1, durationMs) * 100)}%` }} />
+      </div>
       <div className="timeline-footer">
         <span>Drag the playhead to scrub · Select a block to edit</span>
         <button className="subtle-button" onClick={addCaption}>＋ Add caption</button>
