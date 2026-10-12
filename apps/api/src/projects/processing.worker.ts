@@ -1,10 +1,10 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import { PrismaService } from '../database/prisma.service';
 import { SupabaseStorageService } from '../storage/supabase-storage.service';
-import { OpenAiWhisperProvider } from '../transcription/openai-whisper.provider';
+import { TRANSCRIPTION_PROVIDER, TranscriptionProvider } from '../transcription/transcription-provider';
 import { groupWordsIntoCaptions } from '../captions/caption-utils';
 import { PROJECT_QUEUE } from './projects.queue';
 import { promises as fs } from 'node:fs';
@@ -23,7 +23,7 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storage: SupabaseStorageService,
-    private readonly whisper: OpenAiWhisperProvider,
+    @Inject(TRANSCRIPTION_PROVIDER) private readonly whisper: TranscriptionProvider,
     private readonly config: ConfigService,
   ) {}
 
