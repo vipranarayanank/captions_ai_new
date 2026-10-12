@@ -1,6 +1,6 @@
 module.exports = {
   root: true,
-  env: { es2022: true, browser: true, node: true },
+  env: { es2022: true, browser: true, node: true, jest: true },
   parser: '@typescript-eslint/parser',
   parserOptions: { ecmaVersion: 'latest', sourceType: 'module', ecmaFeatures: { jsx: true } },
   plugins: ['@typescript-eslint'],
