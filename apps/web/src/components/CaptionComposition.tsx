@@ -147,11 +147,12 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
   const left = active?.positionX != null ? `${active.positionX}%` : '5%';
   const activeAnimation = active?.animationIn ?? transitionName ?? schema.animation.enter.type;
   const activeExit = active?.animationOut ?? schema.animation.exit.type;
+  const activeDuration = active ? active.endMs - active.startMs : 0;
   const enterMs = Math.min(preset.durationMs || 0, activeDuration / 2);
   const exitMs = Math.min(preset.durationMs || 0, activeDuration / 2);
   const enterProgress = enterMs > 0 ? progressAt(timeMs, active?.startMs ?? 0, enterMs) : 1;
   const exitProgress = exitMs > 0 && active ? progressAt(timeMs, active.endMs - exitMs, exitMs) : 0;
-  const activeDuration = active ? active.endMs - active.startMs : 0;
+  const exitStyle = activeExit === 'none' || exitMs <= 0 ? {} : animationStyle(activeExit, 1 - exitProgress);
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#090a10', justifyContent: 'center', alignItems: 'center' }}>
@@ -177,7 +178,9 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             borderColor: preset.id === 'boxed' ? (preset.activeWord ?? '#B7F34A') : undefined,
             boxShadow: preset.structure === 'chat' ? '0 8px 24px rgba(0,0,0,.25)' : undefined,
             transform: `translateX(${active?.positionX != null ? '-50%' : '0'}) ${animationStyle(activeAnimation, enterProgress).transform ?? (preset.structure === 'chat' ? 'scale(1.02)' : '')}`,
-            opacity: activeExit === 'none' || exitMs <= 0 ? (animationStyle(activeAnimation, enterProgress).opacity ?? 1) : 1 - exitProgress,
+            opacity: exitStyle.opacity ?? animationStyle(activeAnimation, enterProgress).opacity ?? 1,
+            ...(exitStyle.transform ? { transform: `translateX(${active?.positionX != null ? '-50%' : '0'}) ${exitStyle.transform}` } : {}),
+            ...(exitStyle.filter ? { filter: exitStyle.filter } : {}),
             ...(preset.id === 'podcast' ? { textAlign:'left' as const, textTransform:'uppercase' as const, fontWeight:900, letterSpacing:'-.035em', maxWidth:'74%', left:'13%' } : {}),
             ...(preset.id === 'hind' ? { textShadow:'0 0 8px rgba(0,210,255,.5)', fontFamily:'Georgia, serif' } : {}),
             ...(preset.id === 'boxed' ? { padding:'0.32em 0.42em', borderRadius:'.12em' } : {}),
