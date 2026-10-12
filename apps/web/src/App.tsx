@@ -209,7 +209,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           await new Promise((resolve) => window.setTimeout(resolve, 5000));
           p = await getProject(id);
         }
-        if (alive) { setProject(p); setTitle(p.title); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); }
+        if (alive) { setProject(p); setTitle(p.title); setBackgroundColor(p.backgroundColor ?? '#000000'); setBackgroundOnly(p.backgroundOnly ?? false); if (p.status === 'FAILED') setError(p.errorMessage || 'Video processing failed.'); }
       } catch (e) { if (alive) setError(e instanceof Error ? e.message : 'Could not load project.'); }
       finally { if (alive) setLoading(false); }
     };
@@ -253,7 +253,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           width: project.width && project.width > 0 ? project.width : 1080,
           height: project.height && project.height > 0 ? project.height : 1920,
         },
-        inputProps: { src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition },
+        inputProps: { src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, backgroundColor, backgroundOnly },
         container: 'mp4',
         videoCodec: 'h264',
         pageResponsiveness: 'medium',
@@ -412,6 +412,8 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     }
     setEmojiMenuOpen(false);
   };
+  const changeBackground = async (color: string) => { setBackgroundColor(color); setBackgroundOnly(true); if (!project) return; try { const updated = await patchProject(id, { backgroundColor: color, backgroundOnly: true }); setProject({ ...updated, captions }); setSaveStatus('Saved'); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save background.'); } };
+  const restoreVideo = async () => { setBackgroundOnly(false); if (!project) return; try { const updated = await patchProject(id, { backgroundOnly: false }); setProject({ ...updated, captions }); } catch (e) { setError(e instanceof Error ? e.message : 'Could not restore video.'); } };
   const changeSound = (volume: number, isMuted = muted) => {
     setSoundVolume(volume);
     setMuted(isMuted);
@@ -479,7 +481,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         </div>      </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">{previewDimensions.width >= previewDimensions.height ? '16:9 · HORIZONTAL' : '9:16 · VERTICAL'}</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, selectedCaptionId: selectedId, selectedWordId: selectedWord?.wordId, editable: true, onSelectCaption: (captionId: string) => { selectCaption(captionId); setSelectedWord(null); }, onSelectWord: (captionId: string, wordId: string) => { selectCaption(captionId); setSelectedWord({ captionId, wordId }); }, onMoveCaption: moveCaption, onMoveWord: moveWord }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, backgroundColor, backgroundOnly, selectedCaptionId: selectedId, selectedWordId: selectedWord?.wordId, editable: true, onSelectCaption: (captionId: string) => { selectCaption(captionId); setSelectedWord(null); }, onSelectWord: (captionId: string, wordId: string) => { selectCaption(captionId); setSelectedWord({ captionId, wordId }); }, onMoveCaption: moveCaption, onMoveWord: moveWord }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor, borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
 
       </section>
       <aside className="properties-panel legacy-properties-panel">
@@ -488,13 +490,13 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         <div className="keyboard-hints"><span>KEYBOARD SHORTCUTS</span><p><kbd>Space</kbd> Play / pause</p><p><kbd>←</kbd> <kbd>→</kbd> Seek 0.5 seconds</p><p><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo</p></div>
       </aside>
     </div>
-    <section className="timeline-panel" style={{ backgroundColor }}>
+    <section className="timeline-panel">
       <div className="timeline-toolbar">
         <strong>Timeline</strong>
         <button onClick={addCaption}>＋ Text</button>
         <div className="timeline-toolbar-popover">
           <button aria-expanded={backgroundMenuOpen} onClick={() => { setBackgroundMenuOpen(v => !v); setEmojiMenuOpen(false); setSoundMenuOpen(false); }}>◈ Background</button>
-          {backgroundMenuOpen && <div className="timeline-popover"><label>Workspace background <input type="color" value={backgroundColor} onChange={e => setBackgroundColor(e.target.value)} /></label><button onClick={() => setBackgroundColor('#090a10')}>Reset</button></div>}
+          {backgroundMenuOpen && <div className="timeline-popover background-popover"><strong>Video background</strong><small>Replaces the footage; original audio and captions stay.</small><div className="background-swatches">{[{name:"Black",color:"#000000"},{name:"White",color:"#ffffff"},{name:"Red",color:"#e53935"},{name:"Blue",color:"#1565c0"},{name:"Green",color:"#16834a"},{name:"Purple",color:"#6c35b5"}].map(option=><button key={option.color} title={option.name} aria-label={option.name} className={backgroundColor===option.color?"selected":""} style={{backgroundColor:option.color}} onClick={()=>void changeBackground(option.color)} />)}</div><label>Custom color <input type="color" value={backgroundColor} onChange={e => void changeBackground(e.target.value)} /></label><button onClick={() => void restoreVideo()}>Show original video</button></div>}
         </div>
         <button className={timelineTool === 'select' ? 'timeline-tool-active' : ''} onClick={() => setTimelineTool('select')}>↖ Select</button>
         <button className="timeline-play-button" aria-label="Play or pause" onClick={()=>{if(playerRef.current){playerRef.current.isPlaying()?playerRef.current.pause():playerRef.current.play();}}}>▶</button>
