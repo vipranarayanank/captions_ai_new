@@ -102,7 +102,7 @@ export class ProjectsService {
       endMs: Math.round(caption.endMs),
       text: caption.text.trim(),
       words: (caption.words ?? []).map((word) => ({
-        text: String(word.text), startMs: Math.round(word.startMs), endMs: Math.round(word.endMs),
+        id: word.id || randomUUID(), text: String(word.text), startMs: Math.round(word.startMs), endMs: Math.round(word.endMs),
       })),
     }));
     const updated = await this.prisma.project.update({
