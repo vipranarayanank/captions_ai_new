@@ -94,24 +94,24 @@ function renderWords(
   }
   if (structure === 'highlight') {
     return <span style={{display:'inline-block',padding:'.16em .34em',borderRadius:'.22em',background:preset.background ?? 'rgba(0,0,0,.72)',lineHeight:1.02}}>
-      {words.map((word,index)=><span key={index} style={{display:'inline-block',marginRight:index===words.length-1?0:'.22em',color:index===activeIndex?(activeWordColor ?? preset.activeWord ?? '#00D9FF'):preset.color,fontWeight:index===activeIndex?900:preset.weight,textShadow:'none'}}>{word}</span>)}
+      {words.map((word,index)=><span key={index} style={{display:'inline-block',marginRight:index===words.length-1?0:'.22em',color:index===activeIndex?(activeWordColor ?? preset.activeWord ?? '#00D9FF'):(textColor ?? preset.color),fontWeight:index===activeIndex?900:preset.weight,textShadow:'none'}}>{word}</span>)}
     </span>;
   }
   if (structure === 'chat') {
-    return <span style={{display:'inline-block',maxWidth:'92%',padding:'.32em .55em',borderRadius:'.7em',background:preset.background ?? '#151519',boxShadow:'0 8px 22px rgba(0,0,0,.35)',lineHeight:1.05}}>{words.map((word,index)=><span key={index} style={{color:index===activeIndex?(activeWordColor ?? preset.activeWord ?? '#35D7FF'):preset.color,display:'inline-block',marginRight:index===words.length-1?0:'.22em'}}>{word}</span>)}</span>;
+    return <span style={{display:'inline-block',maxWidth:'92%',padding:'.32em .55em',borderRadius:'.7em',background:preset.background ?? '#151519',boxShadow:'0 8px 22px rgba(0,0,0,.35)',lineHeight:1.05}}>{words.map((word,index)=><span key={index} style={{color:index===activeIndex?(activeWordColor ?? preset.activeWord ?? '#35D7FF'):(textColor ?? preset.color),display:'inline-block',marginRight:index===words.length-1?0:'.22em'}}>{word}</span>)}</span>;
   }
   if (structure === 'notification') {
-    return <span style={{display:'inline-flex',alignItems:'center',gap:'.28em',padding:'.28em .55em',borderRadius:'999px',background:preset.background??'#E8F7F0',color:preset.color==='#FFFFFF'?'#161616':preset.color,boxShadow:'0 4px 14px rgba(0,0,0,.25)'}}>
+    return <span style={{display:'inline-flex',alignItems:'center',gap:'.28em',padding:'.28em .55em',borderRadius:'999px',background:preset.background??'#E8F7F0',color:(textColor ?? preset.color)==='#FFFFFF'?'#161616':(textColor ?? preset.color),boxShadow:'0 4px 14px rgba(0,0,0,.25)'}}>
       <span style={{width:'.48em',height:'.48em',borderRadius:'50%',background:preset.activeWord??'#29C58A',flexShrink:0}}/>
       {words.join(' ')}
     </span>;
   }
   if (structure === 'three-line') {
     const parts = [words.slice(0,Math.ceil(words.length/3)),words.slice(Math.ceil(words.length/3),Math.ceil(words.length*2/3)),words.slice(Math.ceil(words.length*2/3))];
-    return <span style={{display:'flex',flexDirection:'column',alignItems:'center',lineHeight:.92}}>{parts.filter(p=>p.length).map((part,index)=><span key={index} style={{fontSize:index===1?'1.18em':'.9em',fontWeight:900,color:index===1?(preset.activeWord??'#00D9FF'):preset.color}}>{part.join(' ')}</span>)}</span>;
+    return <span style={{display:'flex',flexDirection:'column',alignItems:'center',lineHeight:.92}}>{parts.filter(p=>p.length).map((part,index)=><span key={index} style={{fontSize:index===1?'1.18em':'.9em',fontWeight:900,color:index===1?(preset.activeWord??'#00D9FF'):(textColor ?? preset.color)}}>{part.join(' ')}</span>)}</span>;
   }
   if (structure === 'scattered') {
-    return <span style={{display:'block',position:'relative',minHeight:'2.2em'}}>{words.map((word,index)=><span key={`${index}-${word}`} style={{display:'inline-block',position:'relative',margin:index%3===1?'-0.15em .05em':'0 .06em',fontSize:index===Math.floor(words.length/2)?'1.35em':index%3===0?'.62em':'.9em',color:index===Math.floor(words.length/2)?(preset.activeWord??'#FFE600'):preset.color,textShadow:preset.shadow,transform:`rotate(${index%2===0?-4:3}deg) translateY(${index%3===0?'.18em':index%3===2?'-.12em':0})`,zIndex:index===Math.floor(words.length/2)?2:1}}>{word}</span>)}</span>;
+    return <span style={{display:'block',position:'relative',minHeight:'2.2em'}}>{words.map((word,index)=><span key={`${index}-${word}`} style={{display:'inline-block',position:'relative',margin:index%3===1?'-0.15em .05em':'0 .06em',fontSize:index===Math.floor(words.length/2)?'1.35em':index%3===0?'.62em':'.9em',color:index===Math.floor(words.length/2)?(preset.activeWord??'#FFE600'):(textColor ?? preset.color),textShadow:preset.shadow,transform:`rotate(${index%2===0?-4:3}deg) translateY(${index%3===0?'.18em':index%3===2?'-.12em':0})`,zIndex:index===Math.floor(words.length/2)?2:1}}>{word}</span>)}</span>;
   }
   if (structure === 'cutout') {
     return <span style={{display:'inline-flex',flexWrap:'wrap',justifyContent:'center',gap:'.08em'}}>{words.map((word,index)=><span key={`${index}-${word}`} style={{display:'inline-block',padding:'.02em .08em',background:index%2?'#F6D84A':'#F7F0D8',color:index%2?'#171717':'#B52037',transform:`rotate(${index%2?3:-2}deg)`,textShadow:'none',boxShadow:'0 2px 0 rgba(0,0,0,.35)'}}>{word}</span>)}</span>;
