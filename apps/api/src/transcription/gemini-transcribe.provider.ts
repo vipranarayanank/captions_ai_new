@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { promises as fs } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { TranscriptionProvider, TranscriptionResult } from './transcription-provider';
 
 type GeminiFile = {
@@ -135,7 +136,7 @@ export class GeminiTranscribeProvider implements TranscriptionProvider {
             const startMs = this.offsetToMs(annotation.start_offset);
             const endMs = this.offsetToMs(annotation.end_offset);
             const text = annotation.text.trim();
-            if (text && endMs > startMs) words.push({ text, startMs, endMs });
+            if (text && endMs > startMs) words.push({ id: randomUUID(), text, startMs, endMs });
           }
         }
       }
