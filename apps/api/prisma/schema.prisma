@@ -17,21 +17,22 @@ enum ProjectStatus {
 }
 
 model Project {
-  id           String        @id @default(cuid())
-  title        String
-  status       ProjectStatus @default(UPLOADED)
-  errorMessage String?
-  videoKey     String        @unique
-  audioKey     String?
-  durationSec  Float?
-  width        Int?
-  height       Int?
-  fps          Float?
-  language     String?
-  templateId   String        @default("classic")
-  captions     Json          @default("[]")
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  title         String
+  status        ProjectStatus @default(UPLOADED)
+  errorMessage  String?
+  videoKey      String        @unique
+  fileSizeBytes Int           @default(0)
+  audioKey      String?
+  durationSec   Float?
+  width         Int?
+  height        Int?
+  fps           Float?
+  language      String?
+  templateId    String        @default("classic")
+  captions      Json          @default("[]")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([createdAt])
   @@index([status])
