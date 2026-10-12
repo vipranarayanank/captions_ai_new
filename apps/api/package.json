@@ -10,7 +10,8 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push"
+    "prisma:push": "prisma db push",
+    "test": "jest --runInBand"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",
