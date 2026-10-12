@@ -14,9 +14,12 @@ Full-stack starter with React + Vite frontend and NestJS API.
 
 ## Setup
 1. Run `npm install` at the repository root.
-2. Copy `apps/api/.env.example` to `apps/api/.env` and set `DATABASE_URL` to your Supabase PostgreSQL connection string.
-3. Run `npm run db:generate`.
-4. Run `npm run dev`.
+2. Copy `apps/api/.env.example` to `apps/api/.env` and set `DATABASE_URL` and `DIRECT_URL` from your Supabase project.
+3. Optionally copy `apps/web/.env.example` to `apps/web/.env` to configure `VITE_API_URL`.
+4. Run `npm run db:generate`, then `npm run db:push` to sync the current Prisma schema.
+5. Run `npm run dev`.
+
+See [`docs/DATABASE.md`](docs/DATABASE.md) for database setup and guidance on keeping a future Firebase/Firestore migration manageable.
 
 Frontend: http://localhost:5173
 API: http://localhost:3000/api
