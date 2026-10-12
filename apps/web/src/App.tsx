@@ -161,8 +161,27 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [exportStatus, setExportStatus] = useState('NOT_STARTED');
   const [exportProgress, setExportProgress] = useState(0);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-  const [styleTab, setStyleTab] = useState<'templates' | 'transitions'>('templates');
+  const [styleTab, setStyleTab] = useState<'edit' | 'templates' | 'transitions'>('templates');
   const [transitionName, setTransitionName] = useState<CaptionAnimation | undefined>(undefined);
+  const [wordsOnScreen, setWordsOnScreen] = useState(4);
+  const [captionScale, setCaptionScale] = useState(100);
+  const [captionX, setCaptionX] = useState(50);
+  const [captionY, setCaptionY] = useState(65);
+  const [applyToAll, setApplyToAll] = useState(false);
+  const [behindPerson, setBehindPerson] = useState(false);
+  const [timelineZoom, setTimelineZoom] = useState(5);
+  const [previewDimensions, setPreviewDimensions] = useState({ width: 1080, height: 1920 });
+  useEffect(() => {
+    if (!videoSrc) return;
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.src = videoSrc;
+    video.onloadedmetadata = () => {
+      if (video.videoWidth > 0 && video.videoHeight > 0) setPreviewDimensions({ width: video.videoWidth, height: video.videoHeight });
+    };
+    return () => { video.onloadedmetadata = null; video.src = ''; };
+  }, [videoSrc]);
+
   const playerRef = useRef<PlayerRef>(null);
   const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
   const lastProjectId = useRef('');
@@ -362,6 +381,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         <div className="panel-heading"><div><span className="section-kicker">TRANSCRIPT</span><h2>Captions <span className="count">{captions.length}</span></h2></div><button className="add-caption" onClick={addCaption}>＋</button></div>
         <div className="template-picker">
           <div className="style-tabs" role="tablist" aria-label="Caption styling">
+            <button role="tab" aria-selected={styleTab === 'edit'} className={styleTab === 'edit' ? 'active' : ''} onClick={() => setStyleTab('edit')}>Edit</button>
             <button role="tab" aria-selected={styleTab === 'templates'} className={styleTab === 'templates' ? 'active' : ''} onClick={() => setStyleTab('templates')}>Templates</button>
             <button role="tab" aria-selected={styleTab === 'transitions'} className={styleTab === 'transitions' ? 'active' : ''} onClick={() => setStyleTab('transitions')}>Transitions</button>
           </div>
@@ -372,38 +392,48 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
                 <span style={{fontFamily:`"${item.font}",sans-serif`,fontWeight:item.weight,color:item.color,textShadow:item.shadow,background:item.background,textTransform:item.uppercase?'uppercase':'none',fontSize:`clamp(10px, .95vw, ${Math.round(item.sizeRel*190)}px)`}}>Your words</span>
                 <small>{item.name}</small><em>{item.category}</em>
               </button>)}</div>
-          </> : <>
+          </> : styleTab === 'transitions' ? <>
             <div className="template-heading"><span>CAPTION TRANSITIONS</span><span>Entrance effects</span></div>
             <div className="transition-grid">{CAPTION_TRANSITIONS.map((item) =>
               <button key={item.id} className={`transition-card ${(transitionName ?? CAPTION_TEMPLATES.find(t => t.id === project.templateId)?.animationIn) === item.id ? 'active' : ''}`} onClick={() => setTransitionName(item.id)}>
                 <span className={`transition-sample anim-${item.id}`}>Aa</span><strong>{item.name}</strong><small>{item.description}</small>
               </button>)}</div>
-            <p className="transition-note">Choose an effect to preview it on your captions. Export uses the same selected effect.</p>
-          </>}
-        </div>
-        {captions.length === 0 ? <div className="no-captions"><p>No captions yet.</p><button className="subtle-button" onClick={addCaption}>＋ Add caption</button></div> :
-          <div className="caption-list">{captions.map((caption) => <article key={caption.id} className={`caption-row ${selectedId === caption.id ? 'selected' : ''} ${currentMs >= caption.startMs && currentMs < caption.endMs ? 'playing' : ''}`}>
-            <button className="caption-time" onClick={() => { selectCaption(caption.id); seek(caption.startMs); }}>{formatTime(caption.startMs)}</button>
-            <textarea aria-label="Caption text" value={caption.text} rows={Math.min(4, Math.max(1, Math.ceil(caption.text.length / 28)))} onFocus={() => selectCaption(caption.id)} onChange={(e) => updateCaption(caption.id, { text: e.target.value })} />
-            <button className="remove-caption" title="Delete caption" onClick={() => removeCaption(caption.id)}>×</button>
-            {selectedId === caption.id && <div className="time-edit"><label>Start <input type="number" min="0" step="0.1" value={(caption.startMs / 1000).toFixed(1)} onChange={(e) => updateCaption(caption.id, { startMs: Math.max(0, Math.round(Number(e.target.value) * 1000)) })} /></label><label>End <input type="number" min="0.2" step="0.1" value={(caption.endMs / 1000).toFixed(1)} onChange={(e) => updateCaption(caption.id, { endMs: Math.max(caption.startMs + 200, Math.round(Number(e.target.value) * 1000)) })} /></label></div>}
-          </article>)}</div>}
-      </aside>
+          </> : <div className="caption-edit-panel">
+            <button className="save-template-button" onClick={() => window.alert('Custom template saving will be connected later.')}>▣ Save as my template</button>
+            <div className="edit-panel-title"><strong>Text</strong><button className="hard-reset-button" onClick={() => { setWordsOnScreen(4); setCaptionScale(100); setCaptionX(50); setCaptionY(65); setBehindPerson(false); }}>↶ Hard Reset</button></div>
+            <textarea aria-label="Selected caption text" className="edit-caption-text" value={selected?.text ?? ''} onChange={(e) => selected && updateCaption(selected.id,{text:e.target.value})} placeholder="Select a caption to edit" rows={2}/>
+            <div className="words-count-row"><strong>Words on screen</strong><button onClick={() => setWordsOnScreen(v=>Math.max(1,v-1))}>−</button><b>{wordsOnScreen}</b><button onClick={() => setWordsOnScreen(v=>Math.min(12,v+1))}>＋</button><button onClick={() => setWordsOnScreen(0)}>Auto</button></div>
+            <p className="edit-help">How many words this caption shows. Other captions keep their own length.</p>
+            <div className="per-word-card"><strong>Per-word editing</strong><p>Edit by</p><div><button className="edit-mode-active">Word</button><button>Line</button></div><small>Double-click a word in the preview to move, resize, recolour, glow or give it a different template on its own.</small></div>
+            <div className="edit-fields-row"><strong>Position</strong><label>X <input type="number" value={captionX} onChange={e=>setCaptionX(Number(e.target.value))}/></label><label>Y <input type="number" value={captionY} onChange={e=>setCaptionY(Number(e.target.value))}/></label></div>
+            <label className="edit-slider-label">Scale <span>{captionScale}%</span><input type="range" min="50" max="220" value={captionScale} onChange={e=>setCaptionScale(Number(e.target.value))}/></label>
+            <div className="edit-fields-row"><strong>Font</strong><select defaultValue="Poppins"><option>Poppins</option><option>Inter</option><option>Montserrat</option><option>Anton</option><option>Playfair Display</option></select><select defaultValue="Inter"><option>Inter</option><option>Raleway</option><option>Space Mono</option><option>Permanent Marker</option></select></div>
+            <div className="edit-fields-row"><strong>Words on screen</strong><select defaultValue="4 words"><option>1 word</option><option>2 words</option><option>4 words</option><option>6 words</option><option>Auto</option></select></div>
+            <button className={`behind-person-setting ${behindPerson?'enabled':''}`} onClick={()=>setBehindPerson(v=>!v)}><span><strong>▱ Behind person</strong><small>Move your captions behind the person — once per project.</small></span><b>{behindPerson?'ON':'OFF'}</b></button>
+            <div className="edit-colors"><strong>Colors</strong>{['Headline 1','Headline 2','Script line'].map((label,i)=><label key={label}>{label}<input type="color" defaultValue={['#ffea00','#ff6d00','#ffffff'][i]}/><code>{['#FFEA00','#FF6D00','#FFFFFF'][i]}</code></label>)}</div>
+            <button className={`apply-all-setting ${applyToAll?'enabled':''}`} onClick={()=>setApplyToAll(v=>!v)}>Apply to All <b>{applyToAll?'ON':'OFF'}</b><small>Apply edits to all chunks of this template</small></button>
+          </div>}
+        </div>      </aside>
       <section className="preview-panel">
-        <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">9:16 · VERTICAL</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={1080} compositionHeight={1920} controls clickToPlay style={{ width: 'min(100%, 340px)', maxHeight: 'min(64vh, 640px)', aspectRatio: '9 / 16', backgroundColor: '#090a10', borderRadius: 12, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">{previewDimensions.width >= previewDimensions.height ? '16:9 · HORIZONTAL' : '9:16 · VERTICAL'}</span></div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor: '#090a10', borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
 
       </section>
-      <aside className="properties-panel">
+      <aside className="properties-panel legacy-properties-panel">
         <div className="panel-heading"><div><span className="section-kicker">DETAILS</span><h2>Properties</h2></div></div>
         {selected ? <><div className="property-group"><label>Caption text</label><textarea className="property-text" value={selected.text} onChange={(e) => updateCaption(selected.id, { text: e.target.value })} rows={4} /><span className="hint">Keep it short for maximum impact.</span></div><div className="property-group"><label>Timing</label><div className="property-time"><div><span>START (SEC)</span><input type="number" min="0" step=".1" value={(selected.startMs / 1000).toFixed(1)} onChange={(e) => updateCaption(selected.id, { startMs: Math.max(0, Math.round(Number(e.target.value) * 1000)) })} /></div><div><span>END (SEC)</span><input type="number" min=".2" step=".1" value={(selected.endMs / 1000).toFixed(1)} onChange={(e) => updateCaption(selected.id, { endMs: Math.max(selected.startMs + 200, Math.round(Number(e.target.value) * 1000)) })} /></div></div></div><div className="caption-actions"><button className="subtle-button" disabled={selected.text.trim().split(/\\s+/).length < 2} onClick={splitSelected}>Split caption</button><button className="subtle-button" disabled={captions.findIndex((caption) => caption.id === selected.id) <= 0 || captions[captions.findIndex((caption) => caption.id === selected.id) - 1]?.endMs > selected.startMs} onClick={mergeSelected}>Merge previous</button></div><button className="danger-button" onClick={() => removeCaption(selected.id)}>Delete caption</button></> : <div className="property-empty"><div>✦</div><strong>Select a caption</strong><p>Choose a caption to edit its text and timing.</p></div>}
         <div className="keyboard-hints"><span>KEYBOARD SHORTCUTS</span><p><kbd>Space</kbd> Play / pause</p><p><kbd>←</kbd> <kbd>→</kbd> Seek 0.5 seconds</p><p><kbd>Ctrl</kbd> + <kbd>Z</kbd> Undo</p></div>
       </aside>
     </div>
     <section className="timeline-panel">
-      <div className="timeline-head">
-        <div><span className="section-kicker">TIMELINE</span><strong>Caption track</strong></div>
-        <span>{formatTime(currentMs)} <span className="timeline-divider">/</span> {formatTime(durationMs)}</span>
+      <div className="timeline-toolbar">
+        <strong>Timeline</strong>
+        <button onClick={addCaption}>＋ Text</button><button onClick={()=>window.alert('Background controls will be connected later.')}>◈ Background</button><button className="timeline-tool-active">↖ Select</button>
+        <button className="timeline-play-button" onClick={()=>{if(playerRef.current){playerRef.current.isPlaying()?playerRef.current.pause():playerRef.current.play();}}}>▶</button>
+        <button className={behindPerson?'timeline-tool-active':''} onClick={()=>setBehindPerson(v=>!v)}>▱ Behind person</button><button onClick={()=>window.alert('Emoji picker will be connected later.')}>☺ Emoji</button>
+        <button disabled>⌕ Zoom</button><button disabled>⇧ Upload</button><button onClick={()=>window.alert('Sound controls will be connected later.')}>♫ Sound</button>
+        <button onClick={()=>window.alert('Undo history will be connected later.')}>↶</button><button onClick={()=>window.alert('Redo history will be connected later.')}>↷</button>
+        <span className="timeline-current-time">{formatTime(currentMs)}</span><button onClick={()=>setTimelineZoom(v=>Math.max(1,v-1))}>⌕−</button><small>{timelineZoom}x</small><button onClick={()=>setTimelineZoom(v=>Math.min(10,v+1))}>⌕＋</button>
       </div>
       <div className="timeline-ruler">
         <span>00:00</span>
