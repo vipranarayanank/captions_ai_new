@@ -170,7 +170,8 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [captionY, setCaptionY] = useState(65);
   const [applyToAll, setApplyToAll] = useState(false);
   const [behindPerson, setBehindPerson] = useState(false);
-  const [timelineZoom, setTimelineZoom] = useState(5);
+  const [timelineZoom, setTimelineZoom] = useState(1);
+  const timelineScrollRef = useRef<HTMLDivElement>(null);
   const [previewDimensions, setPreviewDimensions] = useState({ width: 1080, height: 1920 });
   const playerRef = useRef<PlayerRef>(null);
   const dragRef = useRef<{ id: string; startX: number; startMs: number; endMs: number; width: number; mode: 'move' | 'start' | 'end' } | null>(null);
@@ -440,69 +441,94 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         <button onClick={addCaption}>＋ Text</button><button onClick={()=>window.alert('Background controls will be connected later.')}>◈ Background</button><button className="timeline-tool-active">↖ Select</button>
         <button className="timeline-play-button" onClick={()=>{if(playerRef.current){playerRef.current.isPlaying()?playerRef.current.pause():playerRef.current.play();}}}>▶</button>
         <button className={behindPerson?'timeline-tool-active':''} onClick={()=>setBehindPerson(v=>!v)}>▱ Behind person</button><button onClick={()=>window.alert('Emoji picker will be connected later.')}>☺ Emoji</button>
-        <button disabled>⌕ Zoom</button><button disabled>⇧ Upload</button><button onClick={()=>window.alert('Sound controls will be connected later.')}>♫ Sound</button>
+        <span className="timeline-zoom-label">Zoom</span><button disabled>⇧ Upload</button><button onClick={()=>window.alert('Sound controls will be connected later.')}>♫ Sound</button>
         <button onClick={()=>window.alert('Undo history will be connected later.')}>↶</button><button onClick={()=>window.alert('Redo history will be connected later.')}>↷</button>
         <span className="timeline-current-time">{formatTime(currentMs)}</span><button onClick={()=>setTimelineZoom(v=>Math.max(1,v-1))}>⌕−</button><small>{timelineZoom}x</small><button onClick={()=>setTimelineZoom(v=>Math.min(10,v+1))}>⌕＋</button>
       </div>
-      <div className="timeline-ruler">
-        <span>00:00</span>
-        <span>{formatTime(durationMs / 4)}</span>
-        <span>{formatTime(durationMs / 2)}</span>
-        <span>{formatTime(durationMs * .75)}</span>
-        <span>{formatTime(durationMs)}</span>
-      </div>
-      <div
-        className="timeline-track"
-        onPointerMove={moveTimelineDrag}
-        onPointerUp={endTimelineDrag}
-        onPointerCancel={endTimelineDrag}
-        onClick={(e) => {
-          if (dragRef.current) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs));
-        }}
-      >
-        <div className="timeline-progress" style={{ width: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
-        {captions.map((caption) => (
-          <button
-            key={caption.id}
-            className={`timeline-block ${selectedId === caption.id ? 'active' : ''}`}
-            style={{
-              left: `${caption.startMs / durationMs * 100}%`,
-              width: `${Math.max(.6, (caption.endMs - caption.startMs) / durationMs * 100)}%`
-            }}
-            title={caption.text}
-            onPointerDown={(e) => beginTimelineDrag(e, caption)}
+      <div className="timeline-scroll" ref={timelineScrollRef}>
+        <div className="timeline-content" style={{ width: `${timelineZoom * 100}%` }}>
+          <div className="timeline-ruler">
+            <span>00:00</span>
+            <span>{formatTime(durationMs / 4)}</span>
+            <span>{formatTime(durationMs / 2)}</span>
+            <span>{formatTime(durationMs * .75)}</span>
+            <span>{formatTime(durationMs)}</span>
+          </div>
+          <div
+            className="timeline-track"
+            onPointerMove={moveTimelineDrag}
+            onPointerUp={endTimelineDrag}
+            onPointerCancel={endTimelineDrag}
             onClick={(e) => {
-              e.stopPropagation();
-              selectCaption(caption.id);
-              seek(caption.startMs);
+              if (dragRef.current) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs));
             }}
           >
-            {caption.text}
-          </button>
-        ))}
-        <div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
-      </div>
-      <div
-        className="timeline-audio-track"
-        role="img"
-        aria-label="Video audio waveform synchronized with the timeline"
-        onClick={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs));
-        }}
-      >
-        <span className="timeline-audio-label">♫ Audio</span>
-        <div className="timeline-audio-wave" aria-hidden="true">
-          {Array.from({ length: 240 }, (_, i) => {
-            const envelope = 0.18 + Math.abs(Math.sin(i * 0.19) * Math.cos(i * 0.071)) * 0.82;
-            const height = 5 + envelope * (9 + Math.abs(Math.sin(i * 0.61)) * 24);
-            return <i key={i} style={{ height: `${height}px` }} />;
-          })}
+            <div className="timeline-progress" style={{ width: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
+            {captions.map((caption) => {
+              const spanMs = Math.max(1, caption.endMs - caption.startMs);
+              const words = caption.words?.length ? caption.words : caption.text.trim().split(/\\s+/).filter(Boolean).map((text, index, all) => ({
+                id: `${caption.id}-word-${index}`,
+                text,
+                startMs: caption.startMs + spanMs * index / Math.max(1, all.length),
+                endMs: caption.startMs + spanMs * (index + 1) / Math.max(1, all.length),
+              }));
+              return (
+                <button
+                  key={caption.id}
+                  type="button"
+                  className={`timeline-block ${selectedId === caption.id ? 'active' : ''}`}
+                  style={{
+                    left: `${caption.startMs / durationMs * 100}%`,
+                    width: `${Math.max(.6, spanMs / durationMs * 100)}%`
+                  }}
+                  title={caption.text}
+                  aria-label={`Caption part: ${caption.text}`}
+                  onPointerDown={(e) => beginTimelineDrag(e, caption)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectCaption(caption.id);
+                    seek(caption.startMs);
+                  }}
+                >
+                  {words.map((word) => (
+                    <span
+                      key={word.id}
+                      className="timeline-word"
+                      title={`${word.text} · ${(word.startMs / 1000).toFixed(2)}s–${(word.endMs / 1000).toFixed(2)}s`}
+                      style={{
+                        left: `${Math.max(0, (word.startMs - caption.startMs) / spanMs) * 100}%`,
+                        width: `${Math.max(0, (word.endMs - word.startMs) / spanMs) * 100}%`,
+                      }}
+                    >{word.text}</span>
+                  ))}
+                </button>
+              );
+            })}
+            <div className="playhead" style={{ left: `${Math.min(100, currentMs / durationMs * 100)}%` }} />
+          </div>
+          <div
+            className="timeline-audio-track"
+            role="img"
+            aria-label="Audio waveform lane synchronized with the timeline"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              seek(Math.round(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * durationMs));
+            }}
+          >
+            <span className="timeline-audio-label">♫ Audio</span>
+            <div className="timeline-audio-wave" aria-hidden="true">
+              {Array.from({ length: 240 }, (_, i) => {
+                const envelope = 0.18 + Math.abs(Math.sin(i * 0.19) * Math.cos(i * 0.071)) * 0.82;
+                const height = 5 + envelope * (9 + Math.abs(Math.sin(i * 0.61)) * 24);
+                return <i key={i} style={{ height: `${height}px` }} />;
+              })}
+            </div>
+            <div className="timeline-audio-progress" style={{ width: `${Math.min(100, currentMs / Math.max(1, durationMs) * 100)}%` }} />
+            <div className="timeline-audio-playhead" style={{ left: `${Math.min(100, currentMs / Math.max(1, durationMs) * 100)}%` }} />
+          </div>
         </div>
-        <div className="timeline-audio-progress" style={{ width: `${Math.min(100, currentMs / Math.max(1, durationMs) * 100)}%` }} />
-        <div className="timeline-audio-playhead" style={{ left: `${Math.min(100, currentMs / Math.max(1, durationMs) * 100)}%` }} />
       </div>
       <div className="timeline-footer">
         <span>Drag the playhead to scrub · Select a block to edit</span>
