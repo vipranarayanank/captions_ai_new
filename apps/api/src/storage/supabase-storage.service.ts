@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { promises as fs, createWriteStream } from 'node:fs';
+import { promises as fs, createWriteStream, createReadStream } from 'node:fs';
 import { dirname } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -27,7 +27,7 @@ export class SupabaseStorageService implements StorageService {
   async upload(key: string, localPath: string, contentType: string): Promise<void> {
     const fileInfo = await fs.stat(localPath);
     const safeKey = key.split('/').map((part) => encodeURIComponent(part)).join('/');
-    const response = await fetch(`${this.baseUrl}/storage/v1/object/${encodeURIComponent(this.bucket)}/${safeKey}`, {
+    const requestInit = {
       method: 'POST',
       headers: {
         apikey: this.secretKey,
@@ -38,7 +38,8 @@ export class SupabaseStorageService implements StorageService {
       },
       body: createReadStream(localPath) as any,
       duplex: 'half',
-    });
+    } as RequestInit & { duplex: 'half' };
+    const response = await fetch(`${this.baseUrl}/storage/v1/object/${encodeURIComponent(this.bucket)}/${safeKey}`, requestInit);
     if (!response.ok) {
       const detail = await response.text().catch(() => '');
       throw new InternalServerErrorException(`Storage upload failed (HTTP ${response.status}): ${detail.slice(0, 300)}`);
