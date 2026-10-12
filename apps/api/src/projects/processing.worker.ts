@@ -61,9 +61,7 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
       const video = metadata.streams?.find((stream) => stream.codec_type === 'video');
       const audio = metadata.streams?.some((stream) => stream.codec_type === 'audio');
       if (!audio) throw new Error('This video has no audio track to transcribe.');
-      await execFileAsync('ffmpeg', ['-y', '-i', sourcePath, '-vn', '-ac', '1', '-ar', '16000', '-b:a', '48k', audioPath]);
-      const stat = await fs.stat(audioPath);
-      if (stat.size > 25 * 1024 * 1024) throw new Error('Extracted audio exceeds Whisper 25 MB limit. Shorter videos are supported in this MVP.');
+      await execFileAsync('ffmpeg', ['-y', '-i', sourcePath, '-vn', '-ac', '1', '-ar', '16000', '-b:a', '32k', audioPath]);
       const audioKey = `projects/${projectId}/audio.mp3`;
       await this.storage.upload(audioKey, audioPath, 'audio/mpeg');
       await this.prisma.project.update({
@@ -76,12 +74,39 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
             Number(video.r_frame_rate.split('/')[0]) / Number(video.r_frame_rate.split('/')[1]) : null,
         },
       });
-      const result = await this.whisper.transcribe(audioPath);
-      if (!result.words.length) throw new Error('No speech was detected in this video.');
-      const captions = groupWordsIntoCaptions(result.words);
+      const stat = await fs.stat(audioPath);
+      const transcriptionFiles: Array<{ path: string; offsetMs: number }> = [];
+      if (stat.size <= 25 * 1024 * 1024) {
+        transcriptionFiles.push({ path: audioPath, offsetMs: 0 });
+      } else {
+        const segmentDir = join(tempDir, 'segments');
+        await fs.mkdir(segmentDir, { recursive: true });
+        await execFileAsync('ffmpeg', [
+          '-y', '-i', audioPath, '-f', 'segment', '-segment_time', '600',
+          '-c', 'copy', join(segmentDir, 'part-%03d.mp3'),
+        ]);
+        const parts = (await fs.readdir(segmentDir)).filter((name) => name.endsWith('.mp3')).sort();
+        for (let index = 0; index < parts.length; index++) {
+          const partPath = join(segmentDir, parts[index]);
+          const partStat = await fs.stat(partPath);
+          if (partStat.size > 25 * 1024 * 1024) throw new Error('An audio segment exceeds Whisper 25 MB limit.');
+          transcriptionFiles.push({ path: partPath, offsetMs: index * 600_000 });
+        }
+      }
+      const allWords = [];
+      let language: string | undefined;
+      for (const part of transcriptionFiles) {
+        const result = await this.whisper.transcribe(part.path);
+        language = language ?? result.language;
+        allWords.push(...result.words.map((word) => ({
+          ...word, startMs: word.startMs + part.offsetMs, endMs: word.endMs + part.offsetMs,
+        })));
+      }
+      if (!allWords.length) throw new Error('No speech was detected in this video.');
+      const captions = groupWordsIntoCaptions(allWords);
       await this.prisma.project.update({
         where: { id: projectId },
-        data: { status: 'READY', language: result.language ?? null, captions: captions as any, errorMessage: null },
+        data: { status: 'READY', language: language ?? null, captions: captions as any, errorMessage: null },
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Video processing failed.';
