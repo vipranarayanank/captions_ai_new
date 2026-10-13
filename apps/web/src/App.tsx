@@ -164,6 +164,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [styleTab, setStyleTab] = useState<'edit' | 'templates' | 'transitions'>('templates');
   const [transitionName, setTransitionName] = useState<CaptionAnimation | undefined>(undefined);
+  const [captionPosition, setCaptionPosition] = useState<'top' | 'middle' | 'bottom'>('middle');
   const [selectedWord, setSelectedWord] = useState<{ captionId: string; wordId: string } | null>(null);
   const [templatePreviewRun, setTemplatePreviewRun] = useState<{ id: string; run: number } | null>(null);
   const [applyToAll, setApplyToAll] = useState(false);
@@ -248,6 +249,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
           fps,
           width: project.width && project.width > 0 ? project.width : 1080,
           height: project.height && project.height > 0 ? project.height : 1920,
+          defaultProps: { src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, backgroundColor, backgroundOnly },
         },
         inputProps: { src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, backgroundColor, backgroundOnly },
         container: 'mp4',
@@ -297,6 +299,17 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
     return () => { video.onloadedmetadata = null; video.src = ''; };
   }, [videoSrc]);
   const seek = (ms: number) => { setCurrentMs(ms); playerRef.current?.seekTo(Math.floor(ms / 1000 * 30)); };
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player) return;
+    const onFrameUpdate = (event: { detail: { frame: number } }) => {
+      const frame = event.detail.frame;
+      if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000);
+    };
+    player.addEventListener('frameupdate', onFrameUpdate);
+    return () => player.removeEventListener('frameupdate', onFrameUpdate);
+  }, [project?.status]);
   const changeTemplate = async (templateId: string, all = applyToAll) => {
     if (!project) return;
     if (all || !selected) {
@@ -484,7 +497,7 @@ function Editor({ id, onBack }: { id: string; onBack: () => void }) {
         </div>      </aside>
       <section className="preview-panel">
         <div className="preview-header"><div><span className="section-kicker">LIVE PREVIEW</span><h2>Style your story</h2></div><span className="aspect-label">{previewDimensions.width >= previewDimensions.height ? '16:9 · HORIZONTAL' : '9:16 · VERTICAL'}</span></div>
-        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, backgroundColor, backgroundOnly, selectedCaptionId: selectedId, selectedWordId: selectedWord?.wordId, editable: true, onSelectCaption: (captionId: string) => { selectCaption(captionId); setSelectedWord(null); }, onSelectWord: (captionId: string, wordId: string) => { selectCaption(captionId); setSelectedWord({ captionId, wordId }); }, onMoveCaption: moveCaption, onMoveWord: moveWord }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor, borderRadius: 8, overflow: 'hidden' }} onFrameUpdate={(frame) => { if (frame % 3 === 0) setCurrentMs(frame / 30 * 1000); }} />}</div>
+        <div className="player-wrap">{project.status === 'READY' && <Player ref={playerRef} component={CaptionComposition} inputProps={{ src: videoSrc, captions, templateId: project.templateId, transitionName, captionPosition, backgroundColor, backgroundOnly, selectedCaptionId: selectedId, selectedWordId: selectedWord?.wordId, editable: true, onSelectCaption: (captionId: string) => { selectCaption(captionId); setSelectedWord(null); }, onSelectWord: (captionId: string, wordId: string) => { selectCaption(captionId); setSelectedWord({ captionId, wordId }); }, onMoveCaption: moveCaption, onMoveWord: moveWord }} durationInFrames={Math.max(1, Math.ceil((project.durationSec ?? 30) * 30))} fps={30} compositionWidth={previewDimensions.width} compositionHeight={previewDimensions.height} controls clickToPlay style={{ width: '100%', maxWidth: previewDimensions.width >= previewDimensions.height ? '100%' : 'min(100%, 420px)', height: '100%', maxHeight: '100%', aspectRatio: `${previewDimensions.width} / ${previewDimensions.height}`, backgroundColor, borderRadius: 8, overflow: 'hidden' }} />}</div>
 
       </section>
       <aside className="properties-panel legacy-properties-panel">
