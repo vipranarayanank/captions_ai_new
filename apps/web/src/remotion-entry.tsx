@@ -6,7 +6,7 @@ function RemotionRoot() {
   return (
     <Composition
       id="CaptionsVideo"
-      component={CaptionComposition as ComponentType<Record<string, unknown>>}
+      component={CaptionComposition as unknown as ComponentType<Record<string, unknown>>}
       durationInFrames={300}
       fps={30}
       width={1080}
