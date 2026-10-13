@@ -101,7 +101,6 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
 
   private async process(projectId: string) {
     const tempDir = join(process.cwd(), '.tmp', 'processing', projectId + '-' + randomUUID());
-    const sourcePath = join(tempDir, 'source.mp4');
     const audioPath = join(tempDir, 'audio.mp3');
     try {
       await fs.mkdir(tempDir, { recursive: true });
