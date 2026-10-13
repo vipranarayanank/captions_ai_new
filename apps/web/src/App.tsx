@@ -46,7 +46,7 @@ export default function App() {
 function Home({ onOpen }: { onOpen: (id: string) => void }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [uploading, setUploading] = useState(false);\n  const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [spokenLanguage, setSpokenLanguage] = useState('en');
   const [captionStyle, setCaptionStyle] = useState('native');
@@ -129,7 +129,7 @@ function Home({ onOpen }: { onOpen: (id: string) => void }) {
           <p className="language-hint">{spokenLanguage === 'en' ? 'English audio automatically produces English captions.' : captionStyle === 'native' ? 'Captions stay in the original language and writing system.' : captionStyle === 'roman' ? 'Captions keep the original language but use English letters.' : 'Captions are translated into English.'}</p>
         </div>
         <button type="button" className="primary-button upload-submit" disabled={uploading} onClick={() => void handleUpload()}>
-          {uploading ? 'Uploading video…' : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
+          {uploading ? (uploadProgress >= 100 ? 'Finishing upload…' : `Uploading video… ${uploadProgress}%`) : selectedFile ? 'Generate captions →' : '＋ Choose a video'}
         </button>
       </div>
       {error && <div className="error-banner">{error}</div>}
