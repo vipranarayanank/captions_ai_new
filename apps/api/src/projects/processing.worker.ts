@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
@@ -18,6 +18,7 @@ const execFileAsync = promisify(execFile);
 
 @Injectable()
 export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(ProcessingWorker.name);
   private connection!: IORedis;
   private worker!: Worker;
 
@@ -29,11 +30,29 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.connection = new IORedis(this.config.get<string>('REDIS_URL') ?? 'redis://localhost:6379', { maxRetriesPerRequest: null });
-    this.worker = new Worker(PROJECT_QUEUE, async (job) => this.process(job.data.projectId), {
+    const redisUrl = this.config.get<string>('REDIS_URL') ?? 'redis://localhost:6379';
+    this.connection = new IORedis(redisUrl, { maxRetriesPerRequest: null });
+    this.connection.on('error', (error) => {
+      this.logger.error(`Redis connection error: ${error.message}`);
+    });
+    this.connection.on('ready', () => {
+      this.logger.log('Redis connection ready.');
+    });
+
+    this.worker = new Worker(PROJECT_QUEUE, async (job) => {
+      this.logger.log(`Processing job ${job.id} for project ${job.data.projectId}.`);
+      return this.process(job.data.projectId);
+    }, {
       connection: this.connection,
       concurrency: 2,
     });
+    this.worker.on('ready', () => this.logger.log(`Worker ready for queue "${PROJECT_QUEUE}".`));
+    this.worker.on('active', (job) => this.logger.log(`Job ${job.id} is active.`));
+    this.worker.on('completed', (job) => this.logger.log(`Job ${job.id} completed.`));
+    this.worker.on('failed', (job, error) => {
+      this.logger.error(`Job ${job?.id ?? 'unknown'} failed: ${error.message}`);
+    });
+    this.worker.on('error', (error) => this.logger.error(`Worker error: ${error.message}`));
   }
 
   async onModuleDestroy() {
@@ -81,18 +100,22 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
   }
 
   private async process(projectId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
-    if (!project) return;
     const tempDir = join(process.cwd(), '.tmp', 'processing', projectId + '-' + randomUUID());
-    await fs.mkdir(tempDir, { recursive: true });
-    const sourcePath = join(tempDir, 'source' + extname(project.videoKey));
+    const sourcePath = join(tempDir, 'source.mp4');
     const audioPath = join(tempDir, 'audio.mp3');
     try {
+      await fs.mkdir(tempDir, { recursive: true });
+      const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+      if (!project) {
+        this.logger.warn(`Skipping job for missing project ${projectId}.`);
+        return;
+      }
+      const actualSourcePath = join(tempDir, 'source' + extname(project.videoKey));
       await this.prisma.project.update({ where: { id: projectId }, data: { status: 'EXTRACTING_AUDIO', errorMessage: null } });
-      await this.storage.downloadToFile(project.videoKey, sourcePath);
+      await this.storage.downloadToFile(project.videoKey, actualSourcePath);
       const { stdout } = await execFileAsync('ffprobe', [
         '-v', 'error', '-show_entries', 'format=duration:stream=width,height,r_frame_rate,codec_type',
-        '-of', 'json', sourcePath,
+        '-of', 'json', actualSourcePath,
       ]);
       const metadata = JSON.parse(stdout) as {
         format?: { duration?: string };
@@ -101,7 +124,7 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
       const video = metadata.streams?.find((stream) => stream.codec_type === 'video');
       const audio = metadata.streams?.some((stream) => stream.codec_type === 'audio');
       if (!audio) throw new Error('This video has no audio track to transcribe.');
-      await execFileAsync('ffmpeg', ['-y', '-i', sourcePath, '-vn', '-ac', '1', '-ar', '16000', '-b:a', '32k', audioPath]);
+      await execFileAsync('ffmpeg', ['-y', '-i', actualSourcePath, '-vn', '-ac', '1', '-ar', '16000', '-b:a', '32k', audioPath]);
       const audioKey = `projects/${projectId}/audio.mp3`;
       await this.storage.upload(audioKey, audioPath, 'audio/mpeg');
       await this.prisma.project.update({
@@ -153,9 +176,15 @@ export class ProcessingWorker implements OnModuleInit, OnModuleDestroy {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Video processing failed.';
-      await this.prisma.project.update({
-        where: { id: projectId }, data: { status: 'FAILED', errorMessage: message.slice(0, 1000) },
-      });
+      try {
+        await this.prisma.project.update({
+          where: { id: projectId }, data: { status: 'FAILED', errorMessage: message.slice(0, 1000) },
+        });
+      } catch (statusError) {
+        const statusMessage = statusError instanceof Error ? statusError.message : String(statusError);
+        this.logger.error(`Could not save FAILED status for project ${projectId}: ${statusMessage}`);
+      }
+      this.logger.error(`Project ${projectId} processing failed: ${message}`);
       throw error;
     } finally {
       await fs.rm(tempDir, { recursive: true, force: true });
