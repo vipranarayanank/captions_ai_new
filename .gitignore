@@ -6,6 +6,10 @@ build
 coverage
 .tmp/
 **/.tmp/
+.next/
+**/.next/
+out/
+**/out/
 .env
 .env.*
 !.env.example
