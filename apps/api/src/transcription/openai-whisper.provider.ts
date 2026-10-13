@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import { createReadStream } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { TranscriptionProvider, TranscriptionResult } from './transcription-provider';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class OpenAiWhisperProvider implements TranscriptionProvider {
     });
     const words = ((response as unknown as { words?: Array<{ word: string; start: number; end: number }> }).words ?? [])
       .map((word) => ({
+        id: randomUUID(),
         text: word.word.trim(),
         startMs: Math.max(0, Math.round(word.start * 1000)),
         endMs: Math.max(1, Math.round(word.end * 1000)),
