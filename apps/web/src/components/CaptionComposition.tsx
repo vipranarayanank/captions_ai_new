@@ -71,6 +71,8 @@ function renderWords(
   wordsOnScreen = 0,
   activeWordColor?: string,
   textColor?: string,
+  width = 1080,
+  height = 1920,
 ): React.ReactNode {
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (!words.length) return null;
@@ -219,7 +221,7 @@ export function CaptionComposition({ src, captions, templateId, transitionName, 
             ...(preset.textTransform ? { textTransform: preset.textTransform } : {}),
           }}
         >
-          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y), active.displayMode ?? 'word', active.wordsOnScreen ?? 0, active.activeWordColor, active.textColor)}
+          {renderWords(active.text, timeMs, active.startMs, active.endMs, preset, activeAnimation, structure, active.words, selectedWordId, editable, (wordId) => onSelectWord?.(active.id, wordId), (wordId, x, y) => onMoveWord?.(active.id, wordId, x, y), active.displayMode ?? 'word', active.wordsOnScreen ?? 0, active.activeWordColor, active.textColor, width, height)}
         </div>
       )}
     </AbsoluteFill>
