@@ -45,3 +45,15 @@ The frontend now uses Next.js App Router routes for `/` and `/editor/[id]`. The 
 ## Migration notes
 
 The migration branch is `feat/nest-nextjs`. Run `npm install` at the repository root to refresh `package-lock.json` after the frontend dependency change, then run `npm run build` and test uploads, direct editor URLs, timeline editing, and browser export.
+
+
+## Abekyo Editor workspace
+
+The upstream MIT-licensed [Abekyo Editor](https://github.com/abekyo/abekyo-editor) source is included in `apps/abekyo-editor` as a separate workspace so it can be evaluated without replacing the existing Captify frontend or NestJS API.
+
+```bash
+npm install
+npm run dev:abekyo
+```
+
+The Abekyo editor runs on `http://localhost:3001`. It currently retains Abekyo's own Next.js upload/render API routes and local `public/uploads` storage. It is not yet wired to Captify's NestJS project/caption APIs; that integration is a separate step. See `apps/abekyo-editor/LICENSE` for the upstream MIT license.

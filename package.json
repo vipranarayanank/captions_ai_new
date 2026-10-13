@@ -4,7 +4,8 @@
   "private": true,
   "workspaces": [
     "apps/web",
-    "apps/api"
+    "apps/api",
+    "apps/abekyo-editor"
   ],
   "scripts": {
     "dev": "concurrently -k -n web,api -c blue,green \"npm run dev:web\" \"npm run dev:api\"",
@@ -15,7 +16,9 @@
     "db:push": "npm run prisma:push --workspace @captions-ai/api",
     "test": "npm run test --workspace @captions-ai/api",
     "format": "prettier --write \"apps/**/*.{ts,tsx,css,json}\" \"*.md\" \"*.json\"",
-    "lint": "eslint \"apps/**/*.{ts,tsx}\""
+    "lint": "eslint \"apps/**/*.{ts,tsx}\"",
+    "dev:abekyo": "npm run dev --workspace @captions-ai/abekyo-editor",
+    "build:abekyo": "npm run build --workspace @captions-ai/abekyo-editor"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
