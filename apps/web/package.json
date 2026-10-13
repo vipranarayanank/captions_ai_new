@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev --hostname 0.0.0.0",
+    "dev": "next dev --hostname 0.0.0.0 --port 5173",
     "build": "next build",
-    "start": "next start --hostname 0.0.0.0"
+    "start": "next start --hostname 0.0.0.0 --port 5173"
   },
   "dependencies": {
     "@remotion/player": "4.0.534",
